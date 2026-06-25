@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClinicOps — Patient Access &amp; Staffing Operations</title>
+<meta name="description" content="The operations layer for ambulatory clinics. Patient scheduling, intake, referral tracking, staff availability, and shift coordination — without touching claims or billing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── RESET ─────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:        #061b31;
+    --navy-light:  #0a2a4a;
+    --navy-mid:    #0d3357;
+    --purple:      #533afd;
+    --purple-hover:#6b55ff;
+    --white:       #ffffff;
+    --gray-50:     #f8f9fb;
+    --gray-100:    #f0f2f5;
+    --gray-200:    #e3e6eb;
+    --gray-300:    #caced9;
+    --gray-500:    #6b7280;
+    --gray-700:    #374151;
+    --gray-900:    #111827;
+    --shadow-sm:   0 1px 2px rgba(6,27,49,0.06);
+    --shadow-md:   0 4px 12px rgba(6,27,49,0.08), 0 1px 3px rgba(6,27,49,0.04);
+    --shadow-lg:   0 12px 32px rgba(6,27,49,0.10), 0 4px 8px rgba(6,27,49,0.06);
+    --shadow-xl:   0 20px 48px rgba(6,27,49,0.14), 0 8px 16px rgba(6,27,49,0.08);
+    --shadow-glow: 0 0 0 3px rgba(83,58,253,0.18), 0 4px 16px rgba(83,58,253,0.10);
+    --radius-sm:   6px;
+    --radius-md:   10px;
+    --radius-lg:   16px;
+    --radius-xl:   24px;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 300;
+    color: var(--gray-900);
+    background: var(--white);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── TYPOGRAPHY ────────────────────────────────────────── */
+  h1, h2, h3, h4 { font-weight: 300; letter-spacing: -0.02em; }
+  h1 { font-size: 3.5rem; line-height: 1.12; }
+  h2 { font-size: 2.5rem; line-height: 1.18; }
+  h3 { font-size: 1.375rem; line-height: 1.3; font-weight: 400; }
+  p, li { font-size: 1.0625rem; font-weight: 300; color: var(--gray-700); }
+
+  .eyebrow {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--purple);
+  }
+
+  /* ── LAYOUT ────────────────────────────────────────────── */
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+
+  section { padding: 96px 0; }
+
+  /* ── NAV ──────────────────────────────────────────────── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 1180px; margin: 0 auto; padding: 16px 32px;
+  }
+  .nav-logo {
+    font-size: 1.25rem; font-weight: 500; color: var(--navy);
+    letter-spacing: -0.01em;
+  }
+  .nav-logo span { color: var(--purple); }
+  .nav-links { display: flex; gap: 32px; align-items: center; }
+  .nav-links a {
+    text-decoration: none; font-size: 0.9375rem; font-weight: 400;
+    color: var(--gray-700); transition: color 0.18s ease;
+  }
+  .nav-links a:hover { color: var(--navy); }
+
+  /* ── BUTTONS ──────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 0.9375rem; font-weight: 500;
+    text-decoration: none; cursor: pointer; border: none;
+    transition: all 0.2s ease; white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--purple); color: var(--white);
+    box-shadow: 0 1px 2px rgba(83,58,253,0.18), 0 4px 12px rgba(83,58,253,0.12);
+  }
+  .btn-primary:hover {
+    background: var(--purple-hover);
+    box-shadow: 0 2px 4px rgba(83,58,253,0.22), 0 8px 20px rgba(83,58,253,0.16);
+    transform: translateY(-1px);
+  }
+  .btn-outline {
+    background: transparent; color: var(--navy);
+    border: 1px solid var(--gray-300);
+  }
+  .btn-outline:hover {
+    border-color: var(--navy); background: var(--gray-50);
+  }
+  .btn-ghost {
+    background: transparent; color: var(--gray-700); padding: 8px 16px;
+  }
+  .btn-ghost:hover { color: var(--navy); background: var(--gray-100); }
+
+  /* ── HERO ──────────────────────────────────────────────── */
+  .hero {
+    padding: 120px 0 80px; text-align: center;
+    background: linear-gradient(180deg, var(--white) 0%, var(--gray-50) 100%);
+  }
+  .hero .eyebrow { margin-bottom: 20px; }
+  .hero h1 {
+    max-width: 820px; margin: 0 auto 24px; color: var(--navy);
+  }
+  .hero p {
+    max-width: 620px; margin: 0 auto 40px; font-size: 1.2rem;
+    color: var(--gray-500);
+  }
+  .hero-ctas { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+  /* Hero illustration */
+  .hero-visual {
+    margin-top: 64px;
+    max-width: 880px; margin-left: auto; margin-right: auto;
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl), 0 0 0 1px var(--gray-200);
+    overflow: hidden;
+  }
+  .hero-visual-inner {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--gray-200);
+  }
+  .hero-card {
+    background: var(--white); padding: 28px 24px; text-align: left;
+  }
+  .hero-card-icon {
+    width: 40px; height: 40px; border-radius: var(--radius-sm);
+    background: rgba(83,58,253,0.08); display: flex; align-items: center;
+    justify-content: center; margin-bottom: 16px;
+    font-size: 1.2rem;
+  }
+  .hero-card h4 { font-size: 0.9375rem; font-weight: 500; color: var(--navy); margin-bottom: 6px; }
+  .hero-card p { font-size: 0.875rem; color: var(--gray-500); line-height: 1.5; }
+
+  /* ── PROBLEM SECTION ───────────────────────────────────── */
+  .problem { background: var(--navy); color: var(--white); }
+  .problem h2 { color: var(--white); margin-bottom: 16px; }
+  .problem .section-lead { color: rgba(255,255,255,0.65); font-size: 1.15rem; margin-bottom: 56px; }
+  .problem-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px;
+  }
+  .problem-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-lg); padding: 36px 28px;
+    transition: border-color 0.25s ease;
+  }
+  .problem-card:hover { border-color: rgba(255,255,255,0.18); }
+  .problem-card .stat {
+    font-size: 2.5rem; font-weight: 300; color: var(--purple);
+    line-height: 1.1; margin-bottom: 12px;
+  }
+  .problem-card h3 { color: var(--white); margin-bottom: 8px; }
+  .problem-card p { color: rgba(255,255,255,0.55); font-size: 0.95rem; }
+
+  /* ── SOLUTION / FEATURES ───────────────────────────────── */
+  .solution { background: var(--white); }
+  .solution .section-header { text-align: center; margin-bottom: 64px; }
+  .solution h2 { color: var(--navy); margin-bottom: 12px; }
+  .solution .section-lead { color: var(--gray-500); font-size: 1.15rem; }
+
+  .feature-row {
+    display: flex; align-items: center; gap: 80px; margin-bottom: 96px;
+  }
+  .feature-row:last-child { margin-bottom: 0; }
+  .feature-row.reverse { flex-direction: row-reverse; }
+  .feature-text { flex: 1; }
+  .feature-visual { flex: 1; }
+  .feature-text .eyebrow { margin-bottom: 12px; }
+  .feature-text h3 { color: var(--navy); font-size: 1.75rem; font-weight: 300; margin-bottom: 16px; }
+  .feature-text p { color: var(--gray-500); font-size: 1.05rem; margin-bottom: 20px; }
+  .feature-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    font-size: 0.8125rem; font-weight: 400; padding: 5px 12px;
+    border-radius: 100px; background: var(--gray-100); color: var(--gray-700);
+  }
+
+  .feature-illustration {
+    background: var(--gray-50); border-radius: var(--radius-xl);
+    border: 1px solid var(--gray-200); padding: 32px;
+    box-shadow: var(--shadow-md);
+  }
+  .fi-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; background: var(--white);
+    border-radius: var(--radius-sm); margin-bottom: 8px;
+    border: 1px solid var(--gray-100); font-size: 0.9rem;
+  }
+  .fi-row:last-child { margin-bottom: 0; }
+  .fi-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .fi-dot.green { background: #22c55e; }
+  .fi-dot.amber { background: #f59e0b; }
+  .fi-dot.purple { background: var(--purple); }
+  .fi-label { flex: 1; color: var(--gray-700); font-weight: 400; }
+  .fi-value { color: var(--gray-500); font-weight: 300; font-size: 0.85rem; }
+
+  /* ── HOW IT WORKS ──────────────────────────────────────── */
+  .how-it-works { background: var(--gray-50); }
+  .how-it-works .section-header { text-align: center; margin-bottom: 64px; }
+  .how-it-works h2 { color: var(--navy); margin-bottom: 12px; }
+  .how-it-works .section-lead { color: var(--gray-500); font-size: 1.15rem; }
+
+  .steps {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+  }
+  .step {
+    background: var(--white); border-radius: var(--radius-lg);
+    padding: 32px 24px; border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-sm); position: relative; overflow: hidden;
+  }
+  .step-num {
+    font-size: 3.5rem; font-weight: 300; color: var(--gray-200);
+    position: absolute; top: 8px; right: 20px; line-height: 1;
+  }
+  .step h4 { font-size: 1.05rem; font-weight: 500; color: var(--navy); margin-bottom: 8px; position: relative; }
+  .step p { font-size: 0.9rem; color: var(--gray-500); position: relative; }
+
+  /* ── PRICING ───────────────────────────────────────────── */
+  .pricing { background: var(--white); }
+  .pricing .section-header { text-align: center; margin-bottom: 64px; }
+  .pricing h2 { color: var(--navy); margin-bottom: 12px; }
+  .pricing .section-lead { color: var(--gray-500); font-size: 1.15rem; }
+
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+  .pricing-card {
+    background: var(--white); border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl); padding: 40px 32px;
+    box-shadow: var(--shadow-sm); position: relative;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .pricing-card:hover {
+    box-shadow: var(--shadow-lg); border-color: var(--gray-300);
+  }
+  .pricing-card.featured {
+    border-color: var(--purple);
+    box-shadow: var(--shadow-glow), var(--shadow-md);
+  }
+  .pricing-badge {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    background: var(--purple); color: var(--white);
+    font-size: 0.8125rem; font-weight: 500; padding: 6px 18px;
+    border-radius: 100px; white-space: nowrap;
+  }
+  .pricing-name { font-size: 1.2rem; font-weight: 500; color: var(--navy); margin-bottom: 8px; }
+  .pricing-price {
+    font-size: 3rem; font-weight: 300; color: var(--navy);
+    line-height: 1.1; margin-bottom: 4px;
+  }
+  .pricing-price span { font-size: 1rem; color: var(--gray-500); font-weight: 300; }
+  .pricing-desc { font-size: 0.9rem; color: var(--gray-500); margin-bottom: 28px; }
+  .pricing-features { list-style: none; margin-bottom: 32px; }
+  .pricing-features li {
+    font-size: 0.9rem; color: var(--gray-700); padding: 8px 0;
+    border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; gap: 10px;
+  }
+  .pricing-features li:last-child { border-bottom: none; }
+  .pricing-features li::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--purple); flex-shrink: 0;
+  }
+  .pricing-card .btn { width: 100%; justify-content: center; }
+
+  /* ── TESTIMONIAL / SOCIAL PROOF ────────────────────────── */
+  .social-proof { background: var(--gray-50); }
+  .social-proof .section-header { text-align: center; margin-bottom: 64px; }
+  .social-proof h2 { color: var(--navy); margin-bottom: 12px; }
+  .social-proof .section-lead { color: var(--gray-500); font-size: 1.15rem; }
+
+  .testimonial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .testimonial {
+    background: var(--white); border-radius: var(--radius-lg);
+    padding: 32px 28px; border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-sm);
+  }
+  .testimonial p {
+    font-size: 0.95rem; color: var(--gray-700); font-style: italic;
+    margin-bottom: 20px; line-height: 1.6;
+  }
+  .testimonial .author { font-weight: 500; color: var(--navy); font-size: 0.9rem; }
+  .testimonial .role { font-size: 0.8rem; color: var(--gray-500); }
+
+  /* ── CTA BANNER ────────────────────────────────────────── */
+  .cta-banner {
+    background: var(--navy); color: var(--white); text-align: center;
+    padding: 96px 0;
+  }
+  .cta-banner h2 { color: var(--white); margin-bottom: 16px; }
+  .cta-banner p { color: rgba(255,255,255,0.6); font-size: 1.15rem; margin-bottom: 36px; max-width: 560px; margin-left: auto; margin-right: auto; }
+  .cta-banner .btn-primary { background: var(--white); color: var(--navy); box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.08); }
+  .cta-banner .btn-primary:hover { background: var(--gray-100); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.12); }
+
+  /* ── FOOTER ────────────────────────────────────────────── */
+  footer {
+    background: var(--navy); color: rgba(255,255,255,0.5);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 48px 0;
+  }
+  .footer-inner {
+    display: flex; justify-content: space-between; align-items: center;
+    max-width: 1180px; margin: 0 auto; padding: 0 32px;
+    font-size: 0.875rem;
+  }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { color: rgba(255,255,255,0.5); text-decoration: none; transition: color 0.18s; }
+  .footer-links a:hover { color: rgba(255,255,255,0.8); }
+
+  /* ── RESPONSIVE ────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    h1 { font-size: 2.4rem; }
+    h2 { font-size: 1.8rem; }
+    .problem-grid, .steps, .pricing-grid, .testimonial-grid {
+      grid-template-columns: 1fr;
+    }
+    .hero-visual-inner { grid-template-columns: 1fr; }
+    .feature-row, .feature-row.reverse { flex-direction: column; gap: 40px; }
+    section { padding: 64px 0; }
+    .hero { padding: 80px 0 56px; }
+    .nav-links { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .container { padding: 0 20px; }
+    .nav-inner { padding: 14px 20px; }
+    .hero-ctas { flex-direction: column; align-items: center; }
+    h1 { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">Clinic<span>Ops</span></div>
+    <div class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#solution">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#pricing" class="btn btn-primary">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ──────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="container">
+    <p class="eyebrow">Patient Access &amp; Staffing Operations</p>
+    <h1>Every unfilled slot costs you. Every mismatched shift costs you more.</h1>
+    <p>ClinicOps connects scheduling, intake, referrals, cancellations, staff availability, shift changes, and follow-up &mdash; the operations layer between patients and providers that billing software ignores.</p>
+    <div class="hero-ctas">
+      <a href="#pricing" class="btn btn-primary">Start free &mdash; 5 providers</a>
+      <a href="#solution" class="btn btn-outline">See how it works</a>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-visual-inner">
+        <div class="hero-card">
+          <div class="hero-card-icon">&#128197;</div>
+          <h4>Schedule &amp; Intake</h4>
+          <p>Patient self-scheduling, digital intake forms, and automated slot confirmation.</p>
+        </div>
+        <div class="hero-card">
+          <div class="hero-card-icon">&#128101;</div>
+          <h4>Staff Availability</h4>
+          <p>Provider calendars, shift preferences, and real-time coverage gaps surfaced before they hurt.</p>
+        </div>
+        <div class="hero-card">
+          <div class="hero-card-icon">&#128203;</div>
+          <h4>Referral &amp; Follow-Up</h4>
+          <p>Track inbound referrals, status changes, and post-visit follow-up work without spreadsheets.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROBLEM ──────────────────────────────────────────── -->
+<section class="problem" id="problem">
+  <div class="container">
+    <p class="eyebrow" style="color:rgba(255,255,255,0.5)">The leak</p>
+    <h2>Clinics lose capacity in places billing software doesn't look.</h2>
+    <p class="section-lead">No-show appointments, hold-time abandonment, and staff-to-demand mismatch add up to real revenue left on the table &mdash; and burned-out teams.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="stat">23%</div>
+        <h3>No-show rate without automated confirmation</h3>
+        <p>Manual reminder calls and texts fall through. Automated, multi-touch confirmation brings no-shows under 8%.</p>
+      </div>
+      <div class="problem-card">
+        <div class="stat">40%</div>
+        <h3>of calls end before reaching a scheduler</h3>
+        <p>Patients abandon hold queues. Self-scheduling lets them book on their own time, at 2 AM on a Tuesday, and shows up filled in your calendar.</p>
+      </div>
+      <div class="problem-card">
+        <div class="stat">3&ndash;5&times;</div>
+        <h3>longer to fill a shift manually</h3>
+        <p>Text chains, group messages, and last-minute scramble. When staff calendars and shift availability live in one place, coverage closes in minutes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SOLUTION ──────────────────────────────────────────── -->
+<section class="solution" id="solution">
+  <div class="container">
+    <div class="section-header">
+      <h2>Operations, not billing. Finally.</h2>
+      <p class="section-lead">Your practice management system handles claims. ClinicOps handles everything that happens before, between, and after visits.</p>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-text">
+        <p class="eyebrow">Patient Access</p>
+        <h3>From first touch to confirmed appointment, without staff lifting a finger.</h3>
+        <p>Patients schedule online, complete intake forms digitally, and receive automated confirmations and reminders. Your front desk sees a live dashboard of today's arrivals &mdash; not a ringing phone.</p>
+        <div class="feature-tags">
+          <span class="tag">Self-scheduling</span>
+          <span class="tag">Digital intake</span>
+          <span class="tag">Automated reminders</span>
+          <span class="tag">Waitlist management</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="feature-illustration">
+          <div class="fi-row">
+            <div class="fi-dot green"></div>
+            <div class="fi-label">Sarah M. &mdash; New patient intake</div>
+            <div class="fi-value">Confirmed &bull; 10:30 AM</div>
+          </div>
+          <div class="fi-row">
+            <div class="fi-dot green"></div>
+            <div class="fi-label">James K. &mdash; Follow-up visit</div>
+            <div class="fi-value">Arrived &bull; 10:42 AM</div>
+          </div>
+          <div class="fi-row">
+            <div class="fi-dot amber"></div>
+            <div class="fi-label">Elena R. &mdash; Specialist referral</div>
+            <div class="fi-value">Awaiting intake &bull; 11:15 AM</div>
+          </div>
+          <div class="fi-row">
+            <div class="fi-dot purple"></div>
+            <div class="fi-label">David T. &mdash; Cancellation</div>
+            <div class="fi-value">Slot open &bull; 1:00 PM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div class="feature-text">
+        <p class="eyebrow">Staffing &amp; Shifts</p>
+        <h3>Know who is working, who is available, and where you're short &mdash; before the day starts.</h3>
+        <p>Providers set their recurring availability. When a shift opens or demand spikes, the system surfaces qualified staff who can cover it. No group texts. No guesswork.</p>
+        <div class="feature-tags">
+          <span class="tag">Availability calendars</span>
+          <span class="tag">Shift swaps</span>
+          <span class="tag">Coverage alerts</span>
+          <span class="tag">Demand forecasting</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="feature-illustration">
+          <div class="fi-row">
+            <div class="fi-dot green"></div>
+            <div class="fi-label">Dr. Patel &mdash; General Medicine</div>
+            <div class="fi-value">On shift &bull; 8 AM &ndash; 4 PM</div>
+          </div>
+          <div class="fi-row">
+            <div class="fi-dot green"></div>
+            <div class="fi-label">Nurse Rivera &mdash; Triage</div>
+            <div class="fi-value">On shift &bull; 8 AM &ndash; 4 PM</div>
+          </div>
+          <div class="fi-row">
+            <div class="fi-dot amber"></div>
+            <div class="fi-label">Dr. Chen &mdash; Pediatrics</div>
+            <div class="fi-value">Available after 2 PM</div>
+          </div>
+          <div class="fi-row">
+            <div class="fi-dot purple"></div>
+            <div class="fi-label">PA Williams &mdash; Float</div>
+            <div class="fi-value">Coverage gap &bull; 11 AM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-text">
+        <p class="eyebrow">Referrals &amp; Follow-Up</p>
+        <h3>Track every referral from arrival to first visit. Close the loop on follow-up work.</h3>
+        <p>Inbound referrals get logged, triaged, and tracked through to the first scheduled appointment. Post-visit follow-up tasks &mdash; lab results, imaging orders, specialist handoffs &mdash; are assigned and tracked to completion.</p>
+        <div class="feature-tags">
+          <span class="tag">Referral tracking</span>
+          <span class="tag">Status pipeline</span>
+          <span class="tag">Follow-up tasks</span>
+          <span class="tag">Care gap closure</span>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div class="feature-illustration">
+          <div class="fi-row">
+            <div class="fi-dot purple"></div>
+            <div class="fi-label">Referral #2041 &mdash; Cardiology</div>
+            <div class="fi-value">Received &bull; Awaiting triage</div>
+          </div>
+          <div class="fi-row">
+            <div class="fi-dot amber"></div>
+            <div class="fi-label">Referral #2038 &mdash; Orthopedics</div>
+            <div class="fi-value">Triaged &bull; Scheduled 6/28</div>
+          </div>
+          <div class="fi-row">
+            <div class="fi-dot green"></div>
+            <div class="fi-label">Referral #2032 &mdash; Dermatology</div>
+            <div class="fi-value">First visit complete</div>
+          </div>
+          <div class="fi-row">
+            <div class="fi-dot green"></div>
+            <div class="fi-label">Follow-up: Lab results for Thompson</div>
+            <div class="fi-value">Reviewed &bull; Patient notified</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ──────────────────────────────────────── -->
+<section class="how-it-works">
+  <div class="container">
+    <div class="section-header">
+      <h2>Four steps. No implementation consultants.</h2>
+      <p class="section-lead">You can be live before Friday. Really.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h4>Create your clinic</h4>
+        <p>Add your providers, locations, and visit types. Takes about 20 minutes for a 10-provider practice.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h4>Set schedules &amp; availability</h4>
+        <p>Providers set their recurring hours and shift preferences. Existing calendar sync supported.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h4>Share your booking link</h4>
+        <p>Patients self-schedule, complete intake, and receive confirmations. Your front desk watches the dashboard fill.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h4>Operate from one screen</h4>
+        <p>Today's arrivals, staff coverage, referral pipeline, and follow-up tasks &mdash; all on one dashboard. No switching tools.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICING ───────────────────────────────────────────── -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <h2>Pricing that matches your practice size</h2>
+      <p class="section-lead">Start free. Upgrade when you need more. No calls, no demos, no paperwork.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <p class="pricing-name">Starter</p>
+        <p class="pricing-price">Free</p>
+        <p class="pricing-desc">For small practices getting started.</p>
+        <ul class="pricing-features">
+          <li>Up to 5 providers</li>
+          <li>Patient self-scheduling</li>
+          <li>Digital intake forms</li>
+          <li>Automated reminders</li>
+          <li>Basic dashboard</li>
+          <li>Email support</li>
+        </ul>
+        <a href="#" class="btn btn-outline">Get started</a>
+      </div>
+      <div class="pricing-card featured">
+        <div class="pricing-badge">Most popular</div>
+        <p class="pricing-name">Pro</p>
+        <p class="pricing-price">$299<span>/month</span></p>
+        <p class="pricing-desc">For growing clinics with up to 25 providers.</p>
+        <ul class="pricing-features">
+          <li>Up to 25 providers</li>
+          <li>Everything in Starter</li>
+          <li>Staff availability &amp; shift management</li>
+          <li>Referral tracking pipeline</li>
+          <li>Follow-up task assignment</li>
+          <li>Coverage gap alerts</li>
+          <li>Calendar sync (Google, Outlook)</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="#" class="btn btn-primary">Start 14-day trial</a>
+      </div>
+      <div class="pricing-card">
+        <p class="pricing-name">Enterprise</p>
+        <p class="pricing-price">Custom</p>
+        <p class="pricing-desc">For ambulatory groups and multi-location networks.</p>
+        <ul class="pricing-features">
+          <li>Unlimited providers &amp; locations</li>
+          <li>Everything in Pro</li>
+          <li>Demand forecasting</li>
+          <li>Custom integrations (EHR, PMS)</li>
+          <li>Dedicated account team</li>
+          <li>SLA &amp; SSO</li>
+        </ul>
+        <a href="#" class="btn btn-outline">Contact sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SOCIAL PROOF ──────────────────────────────────────── -->
+<section class="social-proof">
+  <div class="container">
+    <div class="section-header">
+      <h2>Trusted by clinic teams</h2>
+      <p class="section-lead">Operations leaders who switched from spreadsheets and phone tag.</p>
+    </div>
+    <div class="testimonial-grid">
+      <div class="testimonial">
+        <p>&ldquo;We cut our no-show rate from 21% to 7% in the first two months. The automated reminders and self-scheduling did most of the work &mdash; our front desk team actually gets a lunch break now.&rdquo;</p>
+        <div class="author">Maria Gonzalez</div>
+        <div class="role">Patient Access Manager, Valley Health Partners</div>
+      </div>
+      <div class="testimonial">
+        <p>&ldquo;Staffing used to be a Sunday-night group-text panic. Now providers set their availability once and the system does the rest. We fill open shifts in under an hour.&rdquo;</p>
+        <div class="author">Dr. James Okonkwo</div>
+        <div class="role">Medical Director, Northside Family Medicine</div>
+      </div>
+      <div class="testimonial">
+        <p>&ldquo;We were losing referrals because nobody knew where they were in the pipeline. ClinicOps gave us a single view &mdash; we closed 40 more referral-to-first-visit loops last quarter.&rdquo;</p>
+        <div class="author">Priya Nair</div>
+        <div class="role">Director of Operations, Cascade Ambulatory Group</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA BANNER ────────────────────────────────────────── -->
+<section class="cta-banner">
+  <div class="container">
+    <h2>Stop leaking capacity. Start operating.</h2>
+    <p>Free for up to 5 providers. No credit card. No demo call. Set up in an afternoon.</p>
+    <a href="#" class="btn btn-primary">Create your clinic &mdash; it's free</a>
+  </div>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <span>&copy; 2026 ClinicOps. Built for clinic operations teams.</span>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Security</a>
+      <a href="#">Status</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

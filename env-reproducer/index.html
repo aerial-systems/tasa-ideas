@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EnvRepro — Repo to Running Environment, Instantly</title>
+<meta name="description" content="Turn any README, repo, issue, or CI failure into a reproducible cloud dev environment — with dependencies, fixtures, tests, and debug traces. No more setup drift.">
+<style>
+  /* ─── Reset & Base ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #0A2540;
+    background: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; display: block; }
+
+  /* ─── Stripe Design Tokens ─── */
+  :root {
+    --blue-600: #635BFF;
+    --blue-700: #4F46E5;
+    --blue-800: #3730A3;
+    --cyan-400: #00D4FF;
+    --navy-900: #0A2540;
+    --navy-800: #112D4E;
+    --gray-50:  #F6F9FC;
+    --gray-100: #E3E8EE;
+    --gray-200: #C1C9D2;
+    --gray-400: #8792A2;
+    --gray-600: #697386;
+    --green-500: #10B981;
+    --orange-400: #F59E0B;
+    --red-500: #EF4444;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --shadow-sm: 0 1px 2px rgba(10,37,64,0.06);
+    --shadow-md: 0 4px 12px rgba(10,37,64,0.08);
+    --shadow-lg: 0 12px 40px rgba(10,37,64,0.10);
+    --shadow-xl: 0 24px 64px rgba(10,37,64,0.14);
+    --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ─── Utility ─── */
+  .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  .section-padding { padding: 120px 0; }
+
+  /* ─── Nav ─── */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(255,255,255,0.88); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .nav-inner {
+    max-width: 1120px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between; height: 56px;
+  }
+  .nav-logo { font-size: 20px; font-weight: 700; color: var(--navy-900); letter-spacing: -0.3px; }
+  .nav-logo span { color: var(--blue-600); }
+  .nav-links { display: flex; align-items: center; gap: 32px; }
+  .nav-links a { font-size: 14px; font-weight: 500; color: var(--gray-600); transition: color var(--transition); }
+  .nav-links a:hover { color: var(--navy-900); }
+  .nav-cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--blue-600); color: #fff; font-size: 13px; font-weight: 600;
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    transition: background var(--transition), transform var(--transition);
+  }
+  .nav-cta:hover { background: var(--blue-700); transform: translateY(-1px); }
+
+  /* ─── Hero ─── */
+  .hero {
+    padding: 160px 0 80px;
+    background: linear-gradient(180deg, #F6F9FC 0%, #ffffff 100%);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -40%; left: -20%; width: 140%; height: 140%;
+    background: radial-gradient(ellipse at 50% 0%, rgba(99,91,255,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(99,91,255,0.08); color: var(--blue-600);
+    font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px;
+    margin-bottom: 28px; position: relative;
+  }
+  .hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue-600); animation: pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .hero h1 {
+    font-size: clamp(40px, 6vw, 64px); font-weight: 800; letter-spacing: -1.5px;
+    line-height: 1.08; color: var(--navy-900); max-width: 760px; margin: 0 auto 24px;
+    position: relative;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--blue-600), var(--cyan-400));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-subtitle {
+    font-size: 18px; color: var(--gray-600); max-width: 540px;
+    margin: 0 auto 40px; line-height: 1.7; position: relative;
+  }
+  .hero-actions { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; position: relative; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--blue-600); color: #fff; font-size: 15px; font-weight: 600;
+    padding: 14px 28px; border-radius: var(--radius-md);
+    border: none; cursor: pointer;
+    transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+    box-shadow: 0 2px 8px rgba(99,91,255,0.25);
+  }
+  .btn-primary:hover { background: var(--blue-700); box-shadow: 0 4px 16px rgba(99,91,255,0.35); transform: translateY(-1px); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; color: var(--navy-900); font-size: 15px; font-weight: 600;
+    padding: 14px 28px; border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    cursor: pointer;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .btn-secondary:hover { border-color: var(--blue-600); box-shadow: var(--shadow-sm); }
+  .hero-terminal {
+    margin: 64px auto 0; max-width: 680px;
+    background: var(--navy-900); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl); overflow: hidden; position: relative;
+  }
+  .terminal-dots { display: flex; gap: 8px; padding: 14px 18px; background: #0E1E32; }
+  .terminal-dots span { width: 12px; height: 12px; border-radius: 50%; }
+  .terminal-dots span:nth-child(1) { background: #FF5F57; }
+  .terminal-dots span:nth-child(2) { background: #FFBD2E; }
+  .terminal-dots span:nth-child(3) { background: #27CA40; }
+  .terminal-body { padding: 20px 24px 32px; font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.8; color: #E3E8EE; text-align: left; }
+  .terminal-prompt { color: var(--cyan-400); }
+  .terminal-path { color: var(--blue-600); }
+  .terminal-cmd { color: #fff; }
+  .terminal-output { color: var(--gray-200); }
+  .terminal-success { color: var(--green-500); }
+  .terminal-dim { color: var(--gray-400); }
+
+  /* ─── Pain Points ─── */
+  .pain { background: #fff; }
+  .section-label {
+    display: inline-block; font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--blue-600); margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: clamp(28px, 4vw, 40px); font-weight: 800; letter-spacing: -0.8px;
+    line-height: 1.2; color: var(--navy-900); max-width: 600px;
+  }
+  .section-subtitle { font-size: 16px; color: var(--gray-600); max-width: 500px; margin-top: 12px; }
+  .pain-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 56px;
+  }
+  .pain-card {
+    background: var(--gray-50); border: 1px solid var(--gray-100);
+    border-radius: var(--radius-lg); padding: 32px 28px;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .pain-card:hover { border-color: transparent; box-shadow: var(--shadow-md); }
+  .pain-icon {
+    width: 44px; height: 44px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 18px;
+  }
+  .pain-icon.red { background: rgba(239,68,68,0.1); color: var(--red-500); }
+  .pain-icon.orange { background: rgba(245,158,11,0.1); color: var(--orange-400); }
+  .pain-icon.blue { background: rgba(99,91,255,0.1); color: var(--blue-600); }
+  .pain-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--navy-900); }
+  .pain-card p { font-size: 14px; color: var(--gray-600); line-height: 1.65; }
+
+  /* ─── How It Works ─── */
+  .how { background: var(--gray-50); }
+  .how .section-header { text-align: center; }
+  .how .section-title { margin: 0 auto; }
+  .how .section-subtitle { margin: 12px auto 0; }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 56px; }
+  .step {
+    text-align: center; padding: 28px 20px;
+    background: #fff; border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-100);
+    position: relative;
+  }
+  .step-num {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--blue-600); color: #fff; font-size: 15px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;
+  }
+  .step h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--navy-900); }
+  .step p { font-size: 13px; color: var(--gray-600); line-height: 1.6; }
+  .step-arrow {
+    position: absolute; top: 44px; right: -18px;
+    color: var(--gray-200); font-size: 24px; z-index: 1;
+  }
+  .step:last-child .step-arrow { display: none; }
+
+  /* ─── Demo visual ─── */
+  .demo-visual {
+    margin-top: 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+    align-items: center;
+  }
+  .demo-text h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .demo-text p { font-size: 15px; color: var(--gray-600); line-height: 1.7; margin-bottom: 16px; }
+  .demo-checklist { list-style: none; }
+  .demo-checklist li {
+    font-size: 14px; color: var(--gray-600); padding: 6px 0;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .demo-checklist li::before {
+    content: ''; width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(16,185,129,0.15); flex-shrink: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2310B981' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-position: center; background-repeat: no-repeat;
+  }
+  .demo-code {
+    background: var(--navy-900); border-radius: var(--radius-lg);
+    padding: 28px; box-shadow: var(--shadow-lg);
+  }
+  .demo-code pre {
+    font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+    font-size: 12.5px; line-height: 1.85; color: #E3E8EE; margin: 0; overflow-x: auto;
+  }
+  .demo-code .hl-keyword { color: #C792EA; }
+  .demo-code .hl-string { color: #C3E88D; }
+  .demo-code .hl-comment { color: #546E7A; font-style: italic; }
+  .demo-code .hl-func { color: #82AAFF; }
+  .demo-code .hl-var { color: #F78C6C; }
+
+  /* ─── Pricing ─── */
+  .pricing { background: #fff; }
+  .pricing .section-header { text-align: center; }
+  .pricing .section-title { margin: 0 auto; }
+  .pricing .section-subtitle { margin: 12px auto 0; }
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 56px; }
+  .plan {
+    background: #fff; border: 1px solid var(--gray-100); border-radius: var(--radius-xl);
+    padding: 36px 28px; position: relative;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .plan:hover { border-color: transparent; box-shadow: var(--shadow-lg); }
+  .plan-popular {
+    border-color: var(--blue-600);
+    box-shadow: 0 0 0 1px var(--blue-600), var(--shadow-lg);
+  }
+  .plan-popular:hover { box-shadow: 0 0 0 1px var(--blue-600), var(--shadow-xl); }
+  .plan-badge {
+    position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+    background: var(--blue-600); color: #fff; font-size: 12px; font-weight: 700;
+    padding: 4px 16px; border-radius: 20px;
+  }
+  .plan-name { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray-600); margin-bottom: 8px; }
+  .plan-price { font-size: 40px; font-weight: 800; color: var(--navy-900); letter-spacing: -1px; margin-bottom: 4px; }
+  .plan-price sub { font-size: 16px; font-weight: 500; color: var(--gray-400); }
+  .plan-desc { font-size: 14px; color: var(--gray-600); margin-bottom: 24px; }
+  .plan-features { list-style: none; margin-bottom: 28px; }
+  .plan-features li {
+    font-size: 14px; color: var(--gray-600); padding: 8px 0;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .plan-features li::before {
+    content: ''; width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(16,185,129,0.15); flex-shrink: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2310B981' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-position: center; background-repeat: no-repeat;
+  }
+  .plan-btn {
+    display: block; width: 100%; text-align: center;
+    font-size: 14px; font-weight: 600; padding: 12px 0;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+    cursor: pointer;
+  }
+  .plan-btn-outline {
+    background: #fff; color: var(--blue-600); border: 1px solid var(--blue-600);
+  }
+  .plan-btn-outline:hover { background: rgba(99,91,255,0.06); }
+  .plan-btn-solid {
+    background: var(--blue-600); color: #fff; border: 1px solid var(--blue-600);
+  }
+  .plan-btn-solid:hover { background: var(--blue-700); border-color: var(--blue-700); }
+  .plan-btn-enterprise {
+    background: var(--navy-900); color: #fff; border: 1px solid var(--navy-900);
+  }
+  .plan-btn-enterprise:hover { background: #0E1E32; }
+
+  /* ─── Social Proof / Logos ─── */
+  .social-proof { background: var(--gray-50); padding: 64px 0; text-align: center; }
+  .social-proof p { font-size: 13px; color: var(--gray-400); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 32px; }
+  .logos { display: flex; align-items: center; justify-content: center; gap: 48px; flex-wrap: wrap; }
+  .logos span {
+    font-size: 18px; font-weight: 700; color: var(--gray-200);
+    letter-spacing: -0.3px; transition: color var(--transition);
+  }
+  .logos span:hover { color: var(--gray-400); }
+
+  /* ─── CTA Banner ─── */
+  .cta-banner {
+    text-align: center; padding: 100px 0;
+    background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-800) 100%);
+    color: #fff; position: relative; overflow: hidden;
+  }
+  .cta-banner::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cta-banner h2 {
+    font-size: clamp(28px, 4vw, 40px); font-weight: 800; letter-spacing: -0.8px;
+    margin-bottom: 16px; position: relative;
+  }
+  .cta-banner p {
+    font-size: 17px; opacity: 0.85; max-width: 480px; margin: 0 auto 32px; position: relative;
+  }
+  .btn-white {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; color: var(--blue-600); font-size: 15px; font-weight: 700;
+    padding: 14px 32px; border-radius: var(--radius-md);
+    border: none; cursor: pointer;
+    transition: transform var(--transition), box-shadow var(--transition);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12); position: relative;
+  }
+  .btn-white:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.18); }
+
+  /* ─── Footer ─── */
+  .footer {
+    background: var(--navy-900); color: var(--gray-400); padding: 64px 0 32px;
+  }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
+  .footer-brand { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.3px; margin-bottom: 12px; }
+  .footer-brand span { color: var(--blue-600); }
+  .footer-about { font-size: 13px; color: var(--gray-400); line-height: 1.7; max-width: 280px; }
+  .footer-col h4 { font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 16px; }
+  .footer-col ul { list-style: none; }
+  .footer-col ul li { margin-bottom: 10px; }
+  .footer-col ul li a { font-size: 13px; color: var(--gray-400); transition: color var(--transition); }
+  .footer-col ul li a:hover { color: #fff; }
+  .footer-bottom {
+    margin-top: 48px; padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  }
+  .footer-bottom p { font-size: 12px; color: var(--gray-400); }
+  .footer-bottom-links { display: flex; gap: 24px; }
+  .footer-bottom-links a { font-size: 12px; color: var(--gray-400); transition: color var(--transition); }
+  .footer-bottom-links a:hover { color: #fff; }
+
+  /* ─── FAQ ─── */
+  .faq { background: #fff; }
+  .faq .section-header { text-align: center; }
+  .faq .section-title { margin: 0 auto; }
+  .faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 56px; }
+  .faq-item { border-bottom: 1px solid var(--gray-100); padding-bottom: 24px; }
+  .faq-item h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--navy-900); }
+  .faq-item p { font-size: 14px; color: var(--gray-600); line-height: 1.65; }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 900px) {
+    .pain-grid, .steps, .pricing-grid { grid-template-columns: 1fr; }
+    .demo-visual { grid-template-columns: 1fr; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .faq-grid { grid-template-columns: 1fr; }
+    .hero-terminal { margin: 48px 16px 0; }
+    .step-arrow { display: none; }
+    .logos { gap: 28px; }
+  }
+  @media (max-width: 600px) {
+    .nav-links a:not(.nav-cta) { display: none; }
+    .hero h1 { font-size: 32px; }
+    .section-padding { padding: 72px 0; }
+    .hero { padding: 120px 0 48px; }
+    .hero-actions { flex-direction: column; }
+    .footer-grid { grid-template-columns: 1fr; }
+    .footer-bottom { flex-direction: column; text-align: center; }
+    .footer-bottom-links { justify-content: center; }
+  }
+
+  /* ─── Animations ─── */
+  .fade-up {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">Env<span>Repro</span></a>
+    <div class="nav-links">
+      <a href="#how">How It Works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#pricing" class="nav-cta">Start Free →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Now in public beta
+    </div>
+    <h1>Any repo.<br><em>One command.</em><br>Running environment.</h1>
+    <p class="hero-subtitle">
+      Paste a README, a GitHub link, an issue, or a CI failure log — EnvRepro builds a 
+      fully reproducible cloud dev environment with exact dependencies, fixtures, tests, 
+      and debug traces in under 60 seconds.
+    </p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn-primary">Try Free — No Credit Card</a>
+      <a href="#how" class="btn-secondary">See How It Works →</a>
+    </div>
+    <div class="hero-terminal fade-up">
+      <div class="terminal-dots"><span></span><span></span><span></span></div>
+      <div class="terminal-body">
+        <div><span class="terminal-prompt">$</span> <span class="terminal-cmd">envrepro init github.com/myteam/payment-service</span></div>
+        <div><span class="terminal-dim">▸ Parsing repo structure &amp; dependency manifests…</span></div>
+        <div><span class="terminal-dim">▸ Detected: Python 3.11, PostgreSQL 15, Redis 7, Docker Compose</span></div>
+        <div><span class="terminal-dim">▸ Resolving package versions from <span class="terminal-path">requirements.txt</span>, <span class="terminal-path">pyproject.toml</span></span></div>
+        <div><span class="terminal-dim">▸ Bootstrapping database fixtures from <span class="terminal-path">tests/fixtures/</span></span></div>
+        <div><span class="terminal-dim">▸ Installing 47 dependencies…</span></div>
+        <div><span class="terminal-success">✓ Environment ready</span> <span class="terminal-dim">—</span> <span class="terminal-output">https://envrepro.dev/e/x7k9m2</span></div>
+        <div><span class="terminal-dim">▸ IDE attached · Debugger on port 9229 · Hot reload active</span></div>
+        <div><span class="terminal-prompt">$</span> <span class="terminal-output">▍</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pain Points -->
+<section class="pain section-padding">
+  <div class="container">
+    <span class="section-label">The Problem</span>
+    <h2 class="section-title">Setting up a dev environment shouldn't take half your day</h2>
+    <p class="section-subtitle">Every engineer knows the pain. We eliminate it.</p>
+    <div class="pain-grid">
+      <div class="pain-card fade-up">
+        <div class="pain-icon red">⏳</div>
+        <h3>Onboarding takes days, not minutes</h3>
+        <p>New hires spend their first week battling dependency hell, outdated READMEs, and missing setup scripts — killing momentum before they write a single line.</p>
+      </div>
+      <div class="pain-card fade-up">
+        <div class="pain-icon orange">🔁</div>
+        <h3>"Works on my machine" is toxic</h3>
+        <p>CI fails, but your laptop is fine. Or the other way around. Drift between environments wastes hours of bisecting and guesswork across the team.</p>
+      </div>
+      <div class="pain-card fade-up">
+        <div class="pain-icon blue">🐛</div>
+        <h3>Reproducing bugs is archaeology</h3>
+        <p>An issue says "it crashes on startup." You need the exact dependency tree, database state, and config that caused it — not a vague stack trace from last Tuesday.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Social Proof -->
+<section class="social-proof">
+  <div class="container">
+    <p>Trusted by engineering teams at</p>
+    <div class="logos">
+      <span>AcmeCorp</span>
+      <span>DataFold</span>
+      <span>ShipFast</span>
+      <span>CloudNine</span>
+      <span>DevStream</span>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how section-padding" id="how">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">How It Works</span>
+      <h2 class="section-title">From zero to running in four steps</h2>
+      <p class="section-subtitle">No YAML configs. No Dockerfiles. Just point and go.</p>
+    </div>
+    <div class="steps">
+      <div class="step fade-up">
+        <div class="step-num">1</div>
+        <h4>Point at a repo</h4>
+        <p>Paste a GitHub URL, an issue link, a CI failure log, or even just a README. EnvRepro parses it all.</p>
+        <span class="step-arrow">→</span>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">2</div>
+        <h4>Auto-detect everything</h4>
+        <p>Language, runtime, package manager, database, caching layer, env vars — extracted from your codebase automatically.</p>
+        <span class="step-arrow">→</span>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">3</div>
+        <h4>Boot the env</h4>
+        <p>Dependencies install, databases migrate, fixtures load, and your app starts in a sandboxed cloud VM.</p>
+        <span class="step-arrow">→</span>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">4</div>
+        <h4>Debug &amp; ship</h4>
+        <p>Get an IDE connection, live logs, a debugger port, and a shareable URL. Reproduce the bug, fix it, and move on.</p>
+      </div>
+    </div>
+
+    <!-- Demo visual -->
+    <div class="demo-visual">
+      <div class="demo-text fade-up">
+        <h3>CI failure? Paste the log.</h3>
+        <p>
+          EnvRepro ingests raw CI output — GitHub Actions, Jenkins, CircleCI, whatever — 
+          reconstructs the exact environment the pipeline ran in, and drops you into a 
+          live debugging session with the same dependency versions and the same failure.
+        </p>
+        <ul class="demo-checklist">
+          <li>Matches exact package versions from lockfiles</li>
+          <li>Replays migration and seed steps from CI config</li>
+          <li>Captures env vars, secrets (redacted), and OS-level deps</li>
+          <li>Points you to the failing line with a live debugger</li>
+        </ul>
+      </div>
+      <div class="demo-code fade-up">
+        <pre><span class="hl-comment"># Paste your CI failure — EnvRepro handles the rest</span>
+<span class="hl-keyword">import</span> <span class="hl-var">envrepro</span>
+
+<span class="hl-var">env</span> = <span class="hl-var">envrepro</span>.<span class="hl-func">create</span>(
+    <span class="hl-string">"github.com/org/repo"</span>,
+    <span class="hl-var">ci_log</span>=<span class="hl-string">"https://ci.example.com/build/4291"</span>,
+    <span class="hl-var">test</span>=<span class="hl-string">"tests/test_checkout.py::test_empty_cart"</span>
+)
+
+<span class="hl-comment"># 47s later…</span>
+<span class="hl-var">env</span>.<span class="hl-func">open_debugger</span>()       <span class="hl-comment"># Live VS Code session</span>
+<span class="hl-var">env</span>.<span class="hl-func">share</span>(<span class="hl-string">"alex@team.io"</span>)    <span class="hl-comment"># Pair-debug with a teammate</span>
+<span class="hl-var">env</span>.<span class="hl-func">snapshot</span>()               <span class="hl-comment"># Save state for later</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing section-padding" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">Pricing</span>
+      <h2 class="section-title">Start free, scale when you need to</h2>
+      <p class="section-subtitle">No surprises. No sales calls. Just pick a plan.</p>
+    </div>
+    <div class="pricing-grid">
+      <!-- Free -->
+      <div class="plan fade-up">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">$0<sub>/mo</sub></div>
+        <p class="plan-desc">For individual developers exploring and experimenting.</p>
+        <ul class="plan-features">
+          <li>5 environments per month</li>
+          <li>2-hour session timeout</li>
+          <li>1 GB RAM per environment</li>
+          <li>Public repo support</li>
+          <li>Community Discord</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-outline">Get Started Free</a>
+      </div>
+      <!-- Pro -->
+      <div class="plan plan-popular fade-up">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$99<sub>/mo</sub></div>
+        <p class="plan-desc">For professional developers who need reproducibility every day.</p>
+        <ul class="plan-features">
+          <li>Unlimited environments</li>
+          <li>8-hour session timeout</li>
+          <li>8 GB RAM per environment</li>
+          <li>Private repo support</li>
+          <li>CI log ingestion</li>
+          <li>Team sharing &amp; pair debugging</li>
+          <li>Environment snapshots</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-solid">Start Pro Trial</a>
+      </div>
+      <!-- Enterprise -->
+      <div class="plan fade-up">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">Custom</div>
+        <p class="plan-desc">For platform teams that need scale, compliance, and control.</p>
+        <ul class="plan-features">
+          <li>Everything in Pro, plus:</li>
+          <li>SSO / SAML / SCIM</li>
+          <li>Audit logs &amp; compliance reports</li>
+          <li>Custom RAM &amp; CPU allocations</li>
+          <li>VPC peering &amp; private networking</li>
+          <li>On-premises deployment option</li>
+          <li>Dedicated support &amp; SLA</li>
+          <li>Usage analytics dashboard</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-enterprise">Contact Sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq section-padding" id="faq">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">FAQ</span>
+      <h2 class="section-title">Got questions? We've got answers.</h2>
+    </div>
+    <div class="faq-grid">
+      <div class="faq-item fade-up">
+        <h4>What languages and frameworks do you support?</h4>
+        <p>Python, Node.js, Ruby, Go, Rust, Java, Elixir, and PHP — with first-class support for their most popular frameworks and package managers. More languages ship monthly.</p>
+      </div>
+      <div class="faq-item fade-up">
+        <h4>How do you handle secrets and environment variables?</h4>
+        <p>Secrets are encrypted at rest and injected at runtime. You can also connect your own vault (HashiCorp, AWS Secrets Manager, etc.) for Enterprise plans.</p>
+      </div>
+      <div class="faq-item fade-up">
+        <h4>Can I use my own cloud / on-prem infra?</h4>
+        <p>Yes — Enterprise plans support VPC peering for AWS, GCP, and Azure, plus an on-premises deployment option for air-gapped environments.</p>
+      </div>
+      <div class="faq-item fade-up">
+        <h4>What happens to my environments when I'm done?</h4>
+        <p>Environments auto-suspend after your session timeout and are deleted after 7 days of inactivity. Pro users can snapshot environments to preserve exact state indefinitely.</p>
+      </div>
+      <div class="faq-item fade-up">
+        <h4>Do you support monorepos?</h4>
+        <p>Absolutely. EnvRepro detects monorepo structures (Nx, Turborepo, Lerna, Bazel, Pants) and lets you target specific packages or services inside them.</p>
+      </div>
+      <div class="faq-item fade-up">
+        <h4>How does CI log ingestion actually work?</h4>
+        <p>Paste a raw CI log or provide a URL. EnvRepro parses the build steps, extracts dependency install commands, environment variables, and the failing test/command — then rebuilds that exact state in a live sandbox.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-banner">
+  <div class="container">
+    <h2>Stop fighting your environment.<br>Start shipping code.</h2>
+    <p>Spin up a fully reproducible dev environment from any repo, issue, or CI log — free for your first 5 environments.</p>
+    <a href="#pricing" class="btn-white">Try EnvRepro Free →</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">Env<span>Repro</span></div>
+        <p class="footer-about">Reproducible cloud dev environments — from any repo, README, issue, or CI failure. Built for developers who value their time.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#how">How It Works</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#">Changelog</a></li>
+          <li><a href="#">Docs</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">DPA</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 EnvRepro, Inc. All rights reserved.</p>
+      <div class="footer-bottom-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Cookies</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Simple scroll-triggered fade-up animation
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  // Also observe hero terminal on load
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memori — Agent Memory Lifecycle Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Stripe-inspired Design Tokens ── */
+    :root {
+      --gray-0: #ffffff;
+      --gray-50: #f8f9fa;
+      --gray-75: #f0f2f5;
+      --gray-100: #e6e8eb;
+      --gray-200: #c1c6cc;
+      --gray-300: #9ca3ab;
+      --gray-400: #787f89;
+      --gray-500: #5c636e;
+      --gray-600: #3c4257;
+      --gray-700: #2a2f3d;
+      --gray-800: #1a1d26;
+      --gray-900: #0a0c10;
+
+      --accent-primary: #635bff;
+      --accent-primary-light: #7c75ff;
+      --accent-primary-dark: #4f46e5;
+      --accent-secondary: #00d4ff;
+
+      --green-400: #22c55e;
+      --green-50: #f0fdf4;
+      --green-100: #dcfce7;
+      --amber-400: #f59e0b;
+      --amber-50: #fffbeb;
+
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --radius-2xl: 24px;
+
+      --shadow-sm: 0 1px 2px rgba(10,12,16,0.06);
+      --shadow-md: 0 4px 12px rgba(10,12,16,0.08);
+      --shadow-lg: 0 12px 40px rgba(10,12,16,0.12);
+      --shadow-xl: 0 20px 60px rgba(10,12,16,0.15);
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      color: var(--gray-800);
+      background: var(--gray-0);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    /* ── Typography ── */
+    h1, h2, h3, h4 {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    h1 { font-size: clamp(2.5rem, 5vw, 4rem); }
+    h2 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); }
+    h3 { font-size: 1.25rem; }
+
+    .text-mono {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+    }
+
+    .text-caption {
+      font-size: 0.875rem;
+      color: var(--gray-400);
+    }
+
+    .text-gradient {
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Layout ── */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .container-narrow {
+      max-width: 900px;
+    }
+
+    .section {
+      padding: 6rem 0;
+    }
+
+    .section-alt {
+      background: var(--gray-50);
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-logo {
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: var(--gray-900);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-logo .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--gray-600);
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--gray-900);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--gray-900);
+      color: var(--gray-0);
+    }
+
+    .btn-primary:hover {
+      background: var(--gray-700);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-accent {
+      background: var(--accent-primary);
+      color: var(--gray-0);
+    }
+
+    .btn-accent:hover {
+      background: var(--accent-primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-outline {
+      background: var(--gray-0);
+      color: var(--gray-800);
+      border: 1px solid var(--gray-200);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--gray-400);
+      background: var(--gray-50);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--accent-primary);
+      padding: 0.5rem 0.75rem;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(99,91,255,0.06);
+    }
+
+    .btn-lg {
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: var(--radius-lg);
+    }
+
+    .btn-xl {
+      padding: 1.125rem 2.5rem;
+      font-size: 1.05rem;
+      border-radius: var(--radius-lg);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 10rem 0 5rem;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.875rem;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-100);
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--gray-600);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green-400);
+    }
+
+    .hero h1 {
+      margin-bottom: 1.5rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--gray-500);
+      max-width: 640px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-ctas {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-visual {
+      margin-top: 4rem;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── Code Block ── */
+    .code-block {
+      background: var(--gray-900);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.8;
+      color: #e2e8f0;
+      box-shadow: var(--shadow-xl);
+      overflow-x: auto;
+    }
+
+    .code-block .keyword { color: #c792ea; }
+    .code-block .string { color: #c3e88d; }
+    .code-block .prop { color: #82aaff; }
+    .code-block .number { color: #f78c6c; }
+    .code-block .comment { color: #546e7a; }
+    .code-block .bracket { color: #89ddff; }
+
+    /* ── Feature Cards ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: var(--gray-0);
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--gray-200);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .feature-icon.purple { background: #f3f0ff; color: var(--accent-primary); }
+    .feature-icon.blue { background: #eff6ff; color: #3b82f6; }
+    .feature-icon.green { background: var(--green-50); color: #16a34a; }
+    .feature-icon.amber { background: var(--amber-50); color: #d97706; }
+    .feature-icon.rose { background: #fff1f2; color: #e11d48; }
+    .feature-icon.teal { background: #f0fdfa; color: #0d9488; }
+
+    .feature-card h3 {
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .feature-card p {
+      color: var(--gray-400);
+      font-size: 0.925rem;
+      line-height: 1.65;
+    }
+
+    /* ── Pain Section ── */
+    .pain-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .pain-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      background: var(--gray-0);
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius-lg);
+      font-size: 0.925rem;
+      color: var(--gray-600);
+    }
+
+    .pain-item .icon {
+      color: #ef4444;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    /* ── How It Works ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      counter-reset: step;
+    }
+
+    .step {
+      position: relative;
+      padding: 2rem 1.5rem;
+      background: var(--gray-0);
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius-xl);
+      text-align: center;
+    }
+
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 1.25rem;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: var(--gray-0);
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .step h3 {
+      margin-bottom: 0.5rem;
+    }
+
+    .step p {
+      color: var(--gray-400);
+      font-size: 0.9rem;
+    }
+
+    /* ── Pricing ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .pricing-card {
+      background: var(--gray-0);
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius-2xl);
+      padding: 2.5rem 2rem;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .pricing-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    .pricing-card.featured {
+      border: 2px solid var(--accent-primary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .pricing-card.featured::before {
+      content: 'Popular';
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: var(--gray-0);
+      padding: 0.25rem 1rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .pricing-tier {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gray-400);
+      margin-bottom: 0.75rem;
+    }
+
+    .pricing-price {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.03em;
+    }
+
+    .pricing-price span {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--gray-400);
+    }
+
+    .pricing-desc {
+      color: var(--gray-400);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 2rem;
+    }
+
+    .pricing-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      font-size: 0.9rem;
+      color: var(--gray-600);
+      border-bottom: 1px solid var(--gray-75);
+    }
+
+    .pricing-features li:last-child {
+      border-bottom: none;
+    }
+
+    .pricing-features li::before {
+      content: '✓';
+      color: var(--green-400);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .pricing-card .btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* ── Enterprise ── */
+    .enterprise-cta {
+      background: var(--gray-900);
+      border-radius: var(--radius-2xl);
+      padding: 3rem;
+      color: var(--gray-0);
+      text-align: center;
+    }
+
+    .enterprise-cta h2 {
+      color: var(--gray-0);
+      margin-bottom: 1rem;
+    }
+
+    .enterprise-cta p {
+      color: var(--gray-300);
+      max-width: 500px;
+      margin: 0 auto 2rem;
+    }
+
+    .enterprise-cta .btn {
+      background: var(--gray-0);
+      color: var(--gray-900);
+    }
+
+    .enterprise-cta .btn:hover {
+      background: var(--gray-100);
+    }
+
+    /* ── Logos / Social Proof ── */
+    .logos {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .logos span {
+      color: var(--gray-300);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.01em;
+    }
+
+    /* ── Footer ── */
+    footer {
+      background: var(--gray-900);
+      color: var(--gray-300);
+      padding: 4rem 0 2rem;
+    }
+
+    footer .container {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 2rem;
+    }
+
+    footer h4 {
+      color: var(--gray-0);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 1rem;
+    }
+
+    footer a {
+      display: block;
+      color: var(--gray-400);
+      text-decoration: none;
+      font-size: 0.875rem;
+      padding: 0.25rem 0;
+      transition: color 0.2s;
+    }
+
+    footer a:hover {
+      color: var(--gray-0);
+    }
+
+    .footer-brand p {
+      color: var(--gray-400);
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+      max-width: 260px;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid var(--gray-700);
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--gray-500);
+    }
+
+    /* ── Section Headers ── */
+    .section-header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+
+    .section-header h2 {
+      margin-bottom: 1rem;
+    }
+
+    .section-header p {
+      color: var(--gray-400);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ── Trust Bar ── */
+    .trust-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 1.5rem 0;
+      border-top: 1px solid var(--gray-100);
+      border-bottom: 1px solid var(--gray-100);
+      margin-top: 5rem;
+      flex-wrap: wrap;
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--gray-400);
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .trust-item .check {
+      color: var(--green-400);
+      font-weight: 700;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .container { padding: 0 1.25rem; }
+      .section { padding: 3.5rem 0; }
+      .hero { padding: 8rem 0 3rem; }
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 1rem; }
+
+      .pain-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+
+      footer .container {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .nav-links { display: none; }
+      .enterprise-cta { padding: 2rem 1.5rem; }
+    }
+
+    @media (max-width: 480px) {
+      footer .container { grid-template-columns: 1fr; }
+    }
+
+    /* ── Animation ── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .delay-1 { animation-delay: 0.1s; opacity: 0; }
+    .delay-2 { animation-delay: 0.2s; opacity: 0; }
+    .delay-3 { animation-delay: 0.3s; opacity: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav>
+  <div class="container">
+    <a href="#" class="nav-logo">
+      <div class="logo-icon">M</div>
+      Memori
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#pricing" class="btn btn-primary">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<main>
+  <section class="hero">
+    <div class="container container-narrow">
+      <div class="hero-badge fade-in">
+        <span class="dot"></span> Now in Public Beta
+      </div>
+      <h1 class="fade-in delay-1">Agents forget.<br>Give them a <span class="text-gradient">real memory.</span></h1>
+      <p class="fade-in delay-2">
+        Namespace-scoped agent memory with retention policies, retrieval evaluation,
+        context budgets, and replayable diffs — the infrastructure layer for
+        production AI agents that don't hallucinate their own history.
+      </p>
+      <div class="hero-ctas fade-in delay-3">
+        <a href="#pricing" class="btn btn-accent btn-xl">Start Free</a>
+        <a href="#how-it-works" class="btn btn-outline btn-xl">See How It Works</a>
+      </div>
+    </div>
+
+    <div class="container hero-visual fade-in delay-3">
+      <div class="code-block">
+        <span class="comment">// Define a scoped memory namespace with policy</span><br>
+        <span class="keyword">const</span> <span class="prop">supportMem</span> = <span class="prop">memori</span>.<span class="prop">namespace</span>(<span class="string">'customer-support'</span>, {<br>
+        &nbsp;&nbsp;<span class="prop">retention</span>: <span class="string">'90d'</span>,<br>
+        &nbsp;&nbsp;<span class="prop">redaction</span>: [<span class="string">'pii'</span>, <span class="string">'credit_card'</span>],<br>
+        &nbsp;&nbsp;<span class="prop">budget</span>: <span class="number">8_192</span>, &nbsp;<span class="comment">// tokens</span><br>
+        &nbsp;&nbsp;<span class="prop">acls</span>: [<span class="string">'team:support'</span>, <span class="string">'role:auditor'</span>],<br>
+        &nbsp;&nbsp;<span class="prop">diffable</span>: <span class="keyword">true</span><br>
+        });<br><br>
+        <span class="comment">// Retrieve with evaluation score</span><br>
+        <span class="keyword">const</span> { <span class="prop">results</span>, <span class="prop">score</span> } = <span class="keyword">await</span> <span class="prop">supportMem</span>.<span class="prop">retrieve</span>(<span class="string">'billing issue resolution'</span>);<br>
+        <span class="comment">// score: 0.94 — high confidence retrieval</span>
+      </div>
+    </div>
+
+    <div class="container trust-bar">
+      <div class="trust-item"><span class="check">✓</span> SOC 2 Type II</div>
+      <div class="trust-item"><span class="check">✓</span> GDPR Ready</div>
+      <div class="trust-item"><span class="check">✓</span> 99.9% Uptime SLA</div>
+      <div class="trust-item"><span class="check">✓</span> OpenTelemetry Native</div>
+    </div>
+  </section>
+
+  <!-- ── The Problem ── -->
+  <section class="section section-alt">
+    <div class="container container-narrow">
+      <div class="section-header fade-in">
+        <h2>Agent memory is broken.</h2>
+        <p>Teams shipping AI agents hit the same walls. Memori fixes them.</p>
+      </div>
+      <div class="pain-grid">
+        <div class="pain-item fade-in delay-1">
+          <span class="icon">✕</span>
+          <div>
+            <strong>No memory standards.</strong> Every team invents their own — or worse, agents remember everything forever.
+          </div>
+        </div>
+        <div class="pain-item fade-in delay-1">
+          <span class="icon">✕</span>
+          <div>
+            <strong>Context window bloat.</strong> Without budgets, retrieval pumps stale noise into every prompt.
+          </div>
+        </div>
+        <div class="pain-item fade-in delay-2">
+          <span class="icon">✕</span>
+          <div>
+            <strong>PII leaks into memory.</strong> Agents ingest sensitive data; teams can't prove it's been scrubbed.
+          </div>
+        </div>
+        <div class="pain-item fade-in delay-2">
+          <span class="icon">✕</span>
+          <div>
+            <strong>Undebuggable decisions.</strong> When an agent makes a mistake, teams can't replay what it "remembered."
+          </div>
+        </div>
+        <div class="pain-item fade-in delay-3">
+          <span class="icon">✕</span>
+          <div>
+            <strong>No access control.</strong> Memory is flat — anyone can read anything, no audit trail.
+          </div>
+        </div>
+        <div class="pain-item fade-in delay-3">
+          <span class="icon">✕</span>
+          <div>
+            <strong>No expiry.</strong> Memory accumulates indefinitely, degrading retrieval quality over time.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ── -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-header fade-in">
+        <h2>Production-grade agent memory.</h2>
+        <p>Everything AI platform teams need to ship agents that remember correctly.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card fade-in delay-1">
+          <div class="feature-icon purple">📦</div>
+          <h3>Scoped Namespaces</h3>
+          <p>Isolate memory per agent, team, or use-case. Each namespace gets its own policies, ACLs, and budget — no cross-contamination.</p>
+        </div>
+        <div class="feature-card fade-in delay-1">
+          <div class="feature-icon blue">⏳</div>
+          <h3>Retention Policies</h3>
+          <p>Declare how long memories live: 7 days, 90 days, or forever. Automatic garbage collection with configurable grace periods.</p>
+        </div>
+        <div class="feature-card fade-in delay-1">
+          <div class="feature-icon green">🎯</div>
+          <h3>Retrieval Evaluation</h3>
+          <p>Every recall returns an embedding similarity score. Set thresholds, flag low-confidence retrievals, and measure recall quality over time.</p>
+        </div>
+        <div class="feature-card fade-in delay-2">
+          <div class="feature-icon rose">🔒</div>
+          <h3>Redaction Engine</h3>
+          <p>Automatically strip PII, PCI, and PHI at ingestion. Custom redaction patterns, entity detection, and compliance audit logs.</p>
+        </div>
+        <div class="feature-card fade-in delay-2">
+          <div class="feature-icon amber">📊</div>
+          <h3>Context Budget Controls</h3>
+          <p>Cap token usage per retrieval. Prioritize by recency, relevance, or custom ranking. Never blow a context window again.</p>
+        </div>
+        <div class="feature-card fade-in delay-2">
+          <div class="feature-icon teal">🔄</div>
+          <h3>Replayable Memory Diffs</h3>
+          <p>Every memory mutation is versioned. Replay the exact state an agent saw at any point in time. Debug memory-driven mistakes instantly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How It Works ── -->
+  <section class="section section-alt" id="how-it-works">
+    <div class="container">
+      <div class="section-header fade-in">
+        <h2>Start shipping in minutes.</h2>
+        <p>API-first. SDKs for Python, TypeScript, and Go. Drop-in adapters for LangChain, CrewAI, and AutoGen.</p>
+      </div>
+      <div class="steps">
+        <div class="step fade-in delay-1">
+          <h3>Define a Namespace</h3>
+          <p>Set retention, redaction rules, budget caps, and ACLs — all in a single declarative config.</p>
+        </div>
+        <div class="step fade-in delay-2">
+          <h3>Write Memories</h3>
+          <p>Your agents call <code class="text-mono">memori.write()</code>. Memori handles embedding, indexing, and policy enforcement.</p>
+        </div>
+        <div class="step fade-in delay-3">
+          <h3>Retrieve with Confidence</h3>
+          <p>Call <code class="text-mono">memori.retrieve()</code> and get results + evaluation scores. Filter by namespace, time range, or ACL scope.</p>
+        </div>
+        <div class="step fade-in delay-3">
+          <h3>Audit &amp; Debug</h3>
+          <p>Replay memory diffs for any agent, any point in time. Know exactly what influenced every decision.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Social Proof ── -->
+  <section class="section" style="padding: 2rem 0;">
+    <div class="container">
+      <p class="text-caption" style="text-align:center;margin-bottom:1.5rem;">Trusted by AI platform teams at</p>
+      <div class="logos">
+        <span>ACME AI</span>
+        <span>Nexus Labs</span>
+        <span>Tensorfield</span>
+        <span>Cortex Systems</span>
+        <span>DeepSail</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Pricing ── -->
+  <section class="section section-alt" id="pricing">
+    <div class="container">
+      <div class="section-header fade-in">
+        <h2>Simple, transparent pricing.</h2>
+        <p>Start free. Scale when you're ready. No surprises.</p>
+      </div>
+      <div class="pricing-grid">
+        <!-- Free Tier -->
+        <div class="pricing-card fade-in delay-1">
+          <div class="pricing-tier">Free</div>
+          <div class="pricing-price">$0<span>/mo</span></div>
+          <p class="pricing-desc">For solo developers and small experiments.</p>
+          <ul class="pricing-features">
+            <li>Up to 10,000 memories</li>
+            <li>3 namespaces</li>
+            <li>30-day retention max</li>
+            <li>Basic redaction patterns</li>
+            <li>Community support</li>
+            <li>1 context budget profile</li>
+          </ul>
+          <a href="#" class="btn btn-outline">Start Free</a>
+        </div>
+
+        <!-- Pro Tier -->
+        <div class="pricing-card featured fade-in delay-2">
+          <div class="pricing-tier">Pro</div>
+          <div class="pricing-price">$149<span>/mo</span></div>
+          <p class="pricing-desc">For teams shipping production AI agents.</p>
+          <ul class="pricing-features">
+            <li>Up to 1,000,000 memories</li>
+            <li>Unlimited namespaces</li>
+            <li>Custom retention policies</li>
+            <li>Advanced redaction (PII, PCI, PHI)</li>
+            <li>Retrieval evaluation &amp; scoring</li>
+            <li>Context budget controls</li>
+            <li>Replayable memory diffs</li>
+            <li>Role-based ACLs</li>
+            <li>Email support (4hr SLA)</li>
+            <li>SDKs: Python, TS, Go</li>
+          </ul>
+          <a href="#" class="btn btn-accent">Start Pro</a>
+        </div>
+
+        <!-- Enterprise Tier -->
+        <div class="pricing-card fade-in delay-3">
+          <div class="pricing-tier">Enterprise</div>
+          <div class="pricing-price" style="font-size:2rem;">Custom</div>
+          <p class="pricing-desc">For organizations with compliance and scale requirements.</p>
+          <ul class="pricing-features">
+            <li>Unlimited memories</li>
+            <li>Custom namespace hierarchies</li>
+            <li>SSO / SAML / SCIM</li>
+            <li>On-prem / VPC deployment</li>
+            <li>Custom redaction models</li>
+            <li>Dedicated support &amp; Slack</li>
+            <li>99.99% uptime SLA</li>
+            <li>Custom compliance (HIPAA, FedRAMP)</li>
+            <li>Audit log streaming</li>
+            <li>Priority feature requests</li>
+          </ul>
+          <a href="#" class="btn btn-primary">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Enterprise CTA ── -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container">
+      <div class="enterprise-cta fade-in">
+        <h2>Running agents at scale?</h2>
+        <p>Memori Enterprise includes on-prem deployment, custom compliance, dedicated support, and audit log streaming. Built for teams shipping hundreds of agents in production.</p>
+        <a href="#" class="btn btn-lg">Talk to Our Team</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="container">
+    <div class="footer-brand">
+      <a href="#" class="nav-logo" style="color: var(--gray-0);">
+        <div class="logo-icon">M</div>
+        Memori
+      </a>
+      <p>The memory infrastructure layer for production AI agents.</p>
+    </div>
+    <div>
+      <h4>Product</h4>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#">Changelog</a>
+      <a href="#">Roadmap</a>
+    </div>
+    <div>
+      <h4>Developers</h4>
+      <a href="#">Documentation</a>
+      <a href="#">API Reference</a>
+      <a href="#">SDKs</a>
+      <a href="#">Status</a>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+  </div>
+  <div class="footer-bottom container">
+    © 2026 Memori. All rights reserved.
+  </div>
+</footer>
+
+</body>
+</html>

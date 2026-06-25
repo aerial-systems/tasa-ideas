@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP Tool Identity Gateway — Scoped identity for every agent, tool, and server</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #061b31;
+    --navy-light: #0a2540;
+    --navy-mid: #0d2f52;
+    --purple: #533afd;
+    --purple-hover: #4329e8;
+    --purple-glow: rgba(83, 58, 253, 0.25);
+    --purple-glow-soft: rgba(83, 58, 253, 0.10);
+    --white: #ffffff;
+    --gray-50: #f6f9fc;
+    --gray-100: #edf2f7;
+    --gray-200: #dce3eb;
+    --gray-300: #bcc5d0;
+    --gray-400: #8a96a6;
+    --gray-500: #5e6c7c;
+    --gray-600: #3c4b5c;
+    --gray-700: #1f2d3d;
+    --blue-glow-1: 0 2px 8px rgba(6, 27, 49, 0.08);
+    --blue-glow-2: 0 8px 32px rgba(6, 27, 49, 0.10);
+    --blue-glow-3: 0 16px 48px rgba(6, 27, 49, 0.12);
+    --purple-shadow: 0 2px 8px rgba(83, 58, 253, 0.25);
+    --purple-shadow-lg: 0 8px 24px rgba(83, 58, 253, 0.30);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 300;
+    color: var(--gray-700);
+    background: var(--white);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ---------- NAV ---------- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-logo {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nav-logo-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--purple);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  .nav-links a {
+    text-decoration: none;
+    color: var(--gray-500);
+    font-weight: 400;
+    font-size: 0.925rem;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--navy); }
+  .nav-cta {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 20px;
+    background: var(--purple);
+    color: var(--white) !important;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: var(--purple-shadow);
+    white-space: nowrap;
+  }
+  .nav-cta:hover {
+    background: var(--purple-hover);
+    box-shadow: var(--purple-shadow-lg);
+  }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    padding: 100px 32px 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--white) 0%, var(--gray-50) 100%);
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle at 50% 50%, var(--purple-glow-soft) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 100px;
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+    font-weight: 400;
+    margin-bottom: 32px;
+    position: relative;
+  }
+  .hero-badge-dot {
+    width: 7px;
+    height: 7px;
+    background: #22c55e;
+    border-radius: 50%;
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 5vw, 3.75rem);
+    font-weight: 600;
+    color: var(--navy);
+    letter-spacing: -0.025em;
+    line-height: 1.12;
+    max-width: 780px;
+    margin: 0 auto 24px;
+    position: relative;
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--purple) 0%, #7c5cfc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: 1.2rem;
+    font-weight: 300;
+    color: var(--gray-500);
+    max-width: 560px;
+    margin: 0 auto 40px;
+    line-height: 1.55;
+    position: relative;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: var(--purple);
+    color: var(--white);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+    box-shadow: var(--purple-shadow);
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-primary:hover {
+    background: var(--purple-hover);
+    box-shadow: var(--purple-shadow-lg);
+    transform: translateY(-1px);
+  }
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: var(--white);
+    color: var(--navy);
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 1rem;
+    text-decoration: none;
+    border: 1.5px solid var(--gray-200);
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-outline:hover {
+    border-color: var(--purple);
+    box-shadow: var(--blue-glow-1);
+    transform: translateY(-1px);
+  }
+
+  /* ---------- SECTION BASICS ---------- */
+  section { padding: 88px 32px; }
+  .section-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+  .section-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--purple);
+    margin-bottom: 16px;
+  }
+  .section-heading {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 600;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+  .section-body {
+    font-size: 1.1rem;
+    font-weight: 300;
+    color: var(--gray-500);
+    max-width: 640px;
+    line-height: 1.6;
+  }
+
+  /* ---------- PAIN SECTION ---------- */
+  .pain-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 28px;
+    margin-top: 48px;
+  }
+  .pain-card {
+    background: var(--white);
+    border: 1px solid var(--gray-100);
+    border-radius: var(--radius-lg);
+    padding: 32px 28px;
+    transition: box-shadow 0.25s, border-color 0.25s;
+    box-shadow: var(--blue-glow-1);
+  }
+  .pain-card:hover {
+    box-shadow: var(--blue-glow-3);
+    border-color: var(--gray-200);
+  }
+  .pain-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+  }
+  .pain-card-icon.red { background: #fef2f2; color: #dc2626; }
+  .pain-card-icon.amber { background: #fffbeb; color: #d97706; }
+  .pain-card-icon.blue { background: #eff6ff; color: #2563eb; }
+  .pain-card h4 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .pain-card p {
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: var(--gray-500);
+    line-height: 1.55;
+  }
+
+  /* ---------- HOW IT WORKS ---------- */
+  .bg-offset {
+    background: var(--gray-50);
+  }
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 48px;
+    counter-reset: step;
+  }
+  .step {
+    display: flex;
+    gap: 24px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--gray-200);
+    counter-increment: step;
+  }
+  .step:first-child { padding-top: 0; }
+  .step:last-child { border-bottom: none; padding-bottom: 0; }
+  .step-num {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--purple);
+  }
+  .step-content h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .step-content p {
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: var(--gray-500);
+    line-height: 1.55;
+  }
+  .step-code {
+    margin-top: 12px;
+    background: var(--navy);
+    color: #a5b4fc;
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .step-code .key { color: #7dd3fc; }
+  .step-code .val { color: #a5d6a7; }
+
+  /* ---------- FEATURE GRID ---------- */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2px;
+    margin-top: 48px;
+    border: 1px solid var(--gray-100);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--blue-glow-1);
+  }
+  .feature-item {
+    background: var(--white);
+    padding: 32px 28px;
+    border: 1px solid var(--gray-100);
+    margin: -1px 0 0 -1px;
+    transition: background 0.2s;
+  }
+  .feature-item:hover { background: var(--gray-50); }
+  .feature-item h4 {
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .feature-item p {
+    font-size: 0.925rem;
+    font-weight: 300;
+    color: var(--gray-500);
+    line-height: 1.5;
+  }
+
+  /* ---------- PRICING ---------- */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 48px;
+  }
+  .pricing-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--blue-glow-1);
+    transition: box-shadow 0.25s, border-color 0.25s, transform 0.2s;
+    position: relative;
+  }
+  .pricing-card:hover {
+    box-shadow: var(--blue-glow-3);
+    transform: translateY(-2px);
+  }
+  .pricing-card.featured {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 1px var(--purple), var(--blue-glow-2);
+  }
+  .pricing-badge {
+    position: absolute;
+    top: -13px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--purple);
+    color: var(--white);
+    padding: 4px 16px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+  }
+  .pricing-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .pricing-desc {
+    font-size: 0.875rem;
+    font-weight: 300;
+    color: var(--gray-400);
+    margin-bottom: 24px;
+  }
+  .pricing-amount {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .pricing-amount span {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--gray-400);
+  }
+  .pricing-unit {
+    font-size: 0.85rem;
+    font-weight: 300;
+    color: var(--gray-400);
+    margin-bottom: 24px;
+  }
+  .pricing-features {
+    list-style: none;
+    margin-bottom: 28px;
+    flex: 1;
+  }
+  .pricing-features li {
+    font-size: 0.925rem;
+    font-weight: 300;
+    color: var(--gray-600);
+    padding: 6px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.45;
+  }
+  .pricing-features li::before {
+    content: '';
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    background: var(--gray-50);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 10 10' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 5L4 7L8 3' stroke='%23533afd' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    margin-top: 2px;
+  }
+  .btn-pricing {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.925rem;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .btn-pricing-primary {
+    background: var(--purple);
+    color: var(--white);
+    box-shadow: var(--purple-shadow);
+  }
+  .btn-pricing-primary:hover {
+    background: var(--purple-hover);
+    box-shadow: var(--purple-shadow-lg);
+    transform: translateY(-1px);
+  }
+  .btn-pricing-outline {
+    background: var(--white);
+    color: var(--purple);
+    border: 1.5px solid var(--purple);
+  }
+  .btn-pricing-outline:hover {
+    background: var(--purple);
+    color: var(--white);
+  }
+  .btn-pricing-ghost {
+    background: transparent;
+    color: var(--gray-500);
+    border: 1.5px solid var(--gray-200);
+  }
+  .btn-pricing-ghost:hover {
+    border-color: var(--purple);
+    color: var(--purple);
+  }
+
+  /* ---------- LOG TRUST ---------- */
+  .log-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 28px;
+    margin-top: 48px;
+  }
+  .log-card {
+    background: var(--white);
+    border: 1px solid var(--gray-100);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    box-shadow: var(--blue-glow-1);
+  }
+  .log-card h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .log-card p {
+    font-size: 0.925rem;
+    font-weight: 300;
+    color: var(--gray-500);
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .log-block {
+    background: var(--navy);
+    color: #94a3b8;
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.75rem;
+    line-height: 1.65;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .log-block .ts { color: #7dd3fc; }
+  .log-block .id { color: #fde68a; }
+  .log-block .act { color: #a5d6a7; }
+  .log-block .sig { color: #c4b5fd; }
+
+  /* ---------- CTA STRIP ---------- */
+  .cta-strip {
+    background: var(--navy);
+    color: var(--white);
+    text-align: center;
+    padding: 80px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-strip::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle at 50% 50%, rgba(83, 58, 253, 0.18) 0%, transparent 70%);
+  }
+  .cta-strip-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .cta-strip h2 {
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .cta-strip p {
+    font-size: 1.05rem;
+    font-weight: 300;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 32px;
+    line-height: 1.55;
+  }
+  .cta-strip .btn-primary {
+    font-size: 1rem;
+    padding: 15px 32px;
+  }
+  .cta-strip .btn-outline-white {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: transparent;
+    color: var(--white);
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 1rem;
+    text-decoration: none;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    transition: border-color 0.2s, background 0.2s;
+    cursor: pointer;
+    font-family: inherit;
+    margin-left: 12px;
+  }
+  .cta-strip .btn-outline-white:hover {
+    border-color: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.06);
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    padding: 48px 32px;
+    border-top: 1px solid var(--gray-100);
+  }
+  .footer-inner {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .footer-logo {
+    font-weight: 600;
+    color: var(--navy);
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+  }
+  .footer-links {
+    display: flex;
+    gap: 24px;
+  }
+  .footer-links a {
+    text-decoration: none;
+    color: var(--gray-400);
+    font-size: 0.875rem;
+    font-weight: 400;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--navy); }
+  .footer-copy {
+    font-size: 0.8125rem;
+    color: var(--gray-400);
+    font-weight: 300;
+  }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 768px) {
+    .nav-inner { padding: 14px 20px; }
+    .nav-links { gap: 16px; }
+    .hero { padding: 64px 20px 56px; }
+    section { padding: 56px 20px; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .pain-grid { grid-template-columns: 1fr; }
+    .log-grid { grid-template-columns: 1fr; }
+    .cta-strip { padding: 56px 20px; }
+    .cta-strip .btn-outline-white { margin-left: 0; margin-top: 12px; }
+  }
+
+  /* ---------- ANIMATIONS ---------- */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate { animation: fadeUp 0.6s ease-out both; }
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <div class="nav-logo-icon">G</div>
+      Gateway
+    </div>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a class="nav-cta" href="https://app.gateway.example/signup">Start free &rarr;</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">
+    <span class="hero-badge-dot"></span>
+    Now in public beta
+  </div>
+  <h1 class="animate">
+    Every agent gets its own <span>identity</span> — not a shared token
+  </h1>
+  <p class="hero-sub animate delay-1">
+    A control plane that provisions scoped credentials, enforces per-call policy,
+    and keeps a tamper-evident log of every non-human action across your tools
+    and MCP servers.
+  </p>
+  <div class="hero-actions animate delay-2">
+    <a class="btn-primary" href="https://app.gateway.example/signup">
+      Start building free &rarr;
+    </a>
+    <a class="btn-outline" href="#how">
+      See how it works
+    </a>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section id="pain">
+  <div class="section-inner">
+    <p class="section-label">The problem</p>
+    <h2 class="section-heading">Your agents run on borrowed trust</h2>
+    <p class="section-body">
+      Most teams wire AI agents into internal tools with long-lived API keys,
+      wildcard scopes, and zero auditability. When something goes wrong —
+      and it will — you can't answer the one question that matters:
+      <em>which agent did what, when, and with whose credentials?</em>
+    </p>
+    <div class="pain-grid">
+      <div class="pain-card animate">
+        <div class="pain-card-icon red">&#9888;</div>
+        <h4>Over-provisioned tokens</h4>
+        <p>
+          Agents get broad-scope API keys because scoping per-tool is manual,
+          tedious, and fragile. One compromised agent means lateral movement
+          across every service it can reach.
+        </p>
+      </div>
+      <div class="pain-card animate delay-1">
+        <div class="pain-card-icon amber">&#9889;</div>
+        <h4>Zero agent-level audit</h4>
+        <p>
+          Logs say "the API key did X." But which agent? Which model? Which
+          invocation? Without agent-scoped identity, your SIEM can't tell the
+          difference between your code-review bot and your production deployer.
+        </p>
+      </div>
+      <div class="pain-card animate delay-2">
+        <div class="pain-card-icon blue">&#128274;</div>
+        <h4>No per-call policy enforcement</h4>
+        <p>
+          Even if you scope a token, it's static. You can't say "this agent
+          may read from S3 during business hours, but only from the staging
+          bucket, and never after 3 consecutive failures."
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="bg-offset">
+  <div class="section-inner">
+    <p class="section-label">How it works</p>
+    <h2 class="section-heading">Three pieces. Five minutes. No YAML.</h2>
+    <p class="section-body">
+      The Gateway sits between your agents and your tools. It's not a proxy —
+      it's an identity broker. You register tools once, then every call is
+      authenticated, authorized, and logged.
+    </p>
+    <div class="steps">
+      <div class="step animate">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Register your tools and MCP servers</h4>
+          <p>
+            Point the Gateway at your existing tools — APIs, databases, MCP servers,
+            internal services. Each becomes a registered resource with its own
+            policy surface.
+          </p>
+          <div class="step-code">
+<span class="key">$</span> gateway register <span class="val">--name "staging-db"</span> <span class="key">--type</span> postgres <span class="val">--host</span> db.staging.internal
+<span class="key">✓</span> Registered resource <span class="val">res_8xK2mP9v</span> with default deny-all policy
+          </div>
+        </div>
+      </div>
+      <div class="step animate delay-1">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Define agents with scoped identity</h4>
+          <p>
+            Every agent — whether it's Claude Code, a custom MCP client, or a CI
+            pipeline — gets its own identity with short-lived credentials, scoped
+            to exactly the tools it needs, for exactly the operations it should perform.
+          </p>
+          <div class="step-code">
+<span class="key">$</span> gateway agent create <span class="val">--name "code-review-bot"</span> \
+    <span class="key">--allow</span> res_8xK2mP9v:read \
+    <span class="key">--allow</span> res_3aLn7Qw4:read \
+    <span class="key">--max-ttl</span> 15m
+<span class="key">✓</span> Agent <span class="val">agt_xY9vR3kL</span> created. Credentials expire in 15m.
+          </div>
+        </div>
+      </div>
+      <div class="step animate delay-2">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Every call is attested</h4>
+          <p>
+            The Gateway issues a per-call attestation token. Every tool invocation
+            produces a tamper-evident log entry — agent identity, tool, operation,
+            timestamp, and a cryptographic chain that proves the entry hasn't been
+            altered. Ship logs to your SIEM or keep them in the Gateway.
+          </p>
+          <div class="step-code">
+<span class="key">$</span> gateway logs <span class="val">--agent</span> agt_xY9vR3kL <span class="key">--last</span> 5
+<span class="ts">2026-06-25T14:03:11Z</span>  <span class="id">agt_xY9vR3kL</span>  <span class="act">READ</span>   res_8xK2mP9v  <span class="sig">sig:0x7f3a...</span>
+<span class="ts">2026-06-25T14:03:09Z</span>  <span class="id">agt_xY9vR3kL</span>  <span class="act">READ</span>   res_3aLn7Qw4  <span class="sig">sig:0xa91c...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-inner">
+    <p class="section-label">Features</p>
+    <h2 class="section-heading">Built for security teams, not for demos</h2>
+    <p class="section-body">
+      Every feature exists because a team running agents at production scale
+      asked for it. No AI-generated filler.
+    </p>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <h4>Short-lived credentials</h4>
+        <p>No static API keys. Credentials auto-rotate and expire. Default TTL is 5 minutes. You set the ceiling.</p>
+      </div>
+      <div class="feature-item">
+        <h4>Per-call policy engine</h4>
+        <p>Rego-based policies evaluated on every invocation. Rate limits, time windows, parameter constraints, chained approvals.</p>
+      </div>
+      <div class="feature-item">
+        <h4>Tamper-evident audit log</h4>
+        <p>Every entry is hashed and chained. You can verify the integrity of the entire log with a single command. Exports to Splunk, Datadog, or S3.</p>
+      </div>
+      <div class="feature-item">
+        <h4>MCP-native</h4>
+        <p>First-class support for the Model Context Protocol. Register MCP servers as resources. Agents connect through the Gateway without code changes.</p>
+      </div>
+      <div class="feature-item">
+        <h4>Agent SDK (3 lines)</h4>
+        <p>Drop-in SDKs for Python, TypeScript, and Go. Replace your bare API calls with Gateway-authenticated calls in minutes.</p>
+      </div>
+      <div class="feature-item">
+        <h4>IdP integration</h4>
+        <p>Wire agents to your existing identity provider — Okta, Azure AD, or any OIDC provider. Agent identity maps to your org's directory.</p>
+      </div>
+      <div class="feature-item">
+        <h4>Team workspaces</h4>
+        <p>Separate environments for dev, staging, and production. Each workspace has its own resources, agents, and policies.</p>
+      </div>
+      <div class="feature-item">
+        <h4>CLI-first, API-everything</h4>
+        <p>Every operation available via CLI and REST API. Terraform provider for GitOps workflows. No UI-lock-in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="bg-offset">
+  <div class="section-inner">
+    <p class="section-label">Pricing</p>
+    <h2 class="section-heading">Start free. Upgrade when you outgrow it.</h2>
+    <p class="section-body">
+      No call booked. No demo required. No credit card for the free tier.
+      Self-serve from sign-up to production.
+    </p>
+    <div class="pricing-grid">
+      <!-- FREE -->
+      <div class="pricing-card animate">
+        <p class="pricing-name">Free</p>
+        <p class="pricing-desc">For individuals and small experiments</p>
+        <p class="pricing-amount">$0<span>/month</span></p>
+        <p class="pricing-unit">Up to 3 agents</p>
+        <ul class="pricing-features">
+          <li>3 agent identities</li>
+          <li>5 registered tools / MCP servers</li>
+          <li>1 workspace</li>
+          <li>7-day log retention</li>
+          <li>Community policy templates</li>
+          <li>CLI &amp; SDK access</li>
+        </ul>
+        <a class="btn-pricing btn-pricing-primary" href="https://app.gateway.example/signup">Start free</a>
+      </div>
+
+      <!-- TEAM -->
+      <div class="pricing-card featured animate delay-1">
+        <div class="pricing-badge">Most popular</div>
+        <p class="pricing-name">Team</p>
+        <p class="pricing-desc">For platform and AI infra teams</p>
+        <p class="pricing-amount">$199<span>/month</span></p>
+        <p class="pricing-unit">Up to 20 agents</p>
+        <ul class="pricing-features">
+          <li>20 agent identities</li>
+          <li>Unlimited registered tools</li>
+          <li>5 workspaces (dev, staging, prod)</li>
+          <li>90-day log retention</li>
+          <li>Custom Rego policies</li>
+          <li>IdP integration (Okta, Azure AD, OIDC)</li>
+          <li>SIEM export (Splunk, Datadog, S3)</li>
+          <li>Email support, 8-hour SLA</li>
+        </ul>
+        <a class="btn-pricing btn-pricing-primary" href="https://app.gateway.example/signup?plan=team">Start Team plan</a>
+      </div>
+
+      <!-- ENTERPRISE -->
+      <div class="pricing-card animate delay-2">
+        <p class="pricing-name">Enterprise</p>
+        <p class="pricing-desc">For organizations with compliance requirements</p>
+        <p class="pricing-amount">Custom</p>
+        <p class="pricing-unit">Unlimited agents</p>
+        <ul class="pricing-features">
+          <li>Unlimited agent identities</li>
+          <li>Unlimited workspaces</li>
+          <li>Unlimited log retention</li>
+          <li>SAML / OIDC SSO</li>
+          <li>On-prem or VPC deployment</li>
+          <li>Dedicated tenant</li>
+          <li>Custom audit log schema</li>
+          <li>SLA-backed support, dedicated engineer</li>
+        </ul>
+        <a class="btn-pricing btn-pricing-outline" href="https://app.gateway.example/signup?plan=enterprise">Talk to us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LOG TRUST -->
+<section id="trust">
+  <div class="section-inner">
+    <p class="section-label">Trust &amp; transparency</p>
+    <h2 class="section-heading">You can verify every line of the audit log yourself</h2>
+    <p class="section-body">
+      The Gateway doesn't ask you to trust a proprietary black box. Every log
+      entry is individually hashed and chained. Export the log, run a single
+      verification command, and prove to your auditor that no entry has been
+      added, removed, or modified.
+    </p>
+    <div class="log-grid">
+      <div class="log-card">
+        <h4>Raw log entry</h4>
+        <p>Every tool call produces a structured, machine-readable entry.</p>
+        <div class="log-block">{
+  <span class="ts">"ts"</span>: <span class="val">"2026-06-25T14:03:11.204Z"</span>,
+  <span class="id">"agent_id"</span>: <span class="val">"agt_xY9vR3kL"</span>,
+  <span class="id">"agent_name"</span>: <span class="val">"code-review-bot"</span>,
+  <span class="act">"operation"</span>: <span class="val">"READ"</span>,
+  <span class="act">"resource"</span>: <span class="val">"res_8xK2mP9v"</span>,
+  <span class="act">"resource_name"</span>: <span class="val">"staging-db"</span>,
+  <span class="sig">"prev_hash"</span>: <span class="val">"0xa3f1b9c2..."</span>,
+  <span class="sig">"entry_hash"</span>: <span class="val">"0x7f3a8d1e..."</span>,
+  <span class="sig">"signature"</span>: <span class="val">"0xd4e2f..."</span>
+}</div>
+      </div>
+      <div class="log-card">
+        <h4>Verify integrity in one command</h4>
+        <p>Export and verify the full log chain. Works offline.</p>
+        <div class="log-block"><span class="key">$</span> gateway verify <span class="val">--export</span> audit-2026-Q2.jsonl
+<span class="key">✓</span> Verified <span class="val">142,831</span> entries across <span class="val">37</span> agents
+<span class="key">✓</span> Chain integrity: <span class="val">VALID</span>
+<span class="key">✓</span> No missing entries detected
+<span class="key">✓</span> All signatures match</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA STRIP -->
+<section class="cta-strip">
+  <div class="cta-strip-inner">
+    <h2>Give your agents their own credentials</h2>
+    <p>
+      Stop sharing API keys across agents. Get per-agent identity,
+      per-call policy, and a verifiable audit log — in under five minutes.
+    </p>
+    <a class="btn-primary" href="https://app.gateway.example/signup">Start free &rarr;</a>
+    <a class="btn-outline-white" href="#how">Read the docs</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">MCP Tool Identity Gateway</div>
+    <div class="footer-links">
+      <a href="#">Docs</a>
+      <a href="#">SDK</a>
+      <a href="#">Changelog</a>
+      <a href="#">Status</a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Gateway. All rights reserved.</p>
+  </div>
+</footer>
+
+</body>
+</html>

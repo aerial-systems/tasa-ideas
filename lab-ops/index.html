@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabOps OS — The operating layer for biotech labs</title>
+<meta name="description" content="Connect experiments, samples, instruments, inventory, protocols, vendors, and analysis handoffs in a single operating layer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #0A0A0B;
+    --bg-secondary: #111113;
+    --bg-card: #161618;
+    --bg-card-hover: #1C1C1F;
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-medium: rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.14);
+    --text-primary: #EDEDEF;
+    --text-secondary: #A1A1A6;
+    --text-tertiary: #6F6F75;
+    --accent-blue: #3B82F6;
+    --accent-teal: #14B8A6;
+    --accent-purple: #8B5CF6;
+    --accent-amber: #F59E0B;
+    --accent-rose: #F43F5E;
+    --gradient-hero: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #14B8A6 100%);
+    --gradient-cta: linear-gradient(135deg, #3B82F6, #6366F1);
+    --gradient-card: linear-gradient(180deg, rgba(59,130,246,0.06) 0%, transparent 40%);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --shadow-glow: 0 0 40px rgba(59,130,246,0.15);
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow-x: hidden;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Grid pattern background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 64px 64px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Gradient orbs */
+  .orb { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.12; pointer-events: none; z-index: 0; }
+  .orb-1 { width: 600px; height: 600px; background: var(--accent-blue); top: -200px; left: -100px; }
+  .orb-2 { width: 500px; height: 500px; background: var(--accent-purple); top: 50%; right: -200px; }
+  .orb-3 { width: 400px; height: 400px; background: var(--accent-teal); bottom: -100px; left: 30%; }
+
+  /* ---------- LAYOUT ---------- */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+  .container-narrow { max-width: 900px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+
+  section { padding: 120px 0; position: relative; z-index: 1; }
+  section:first-of-type { padding-top: 160px; }
+
+  /* ---------- NAV ---------- */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 16px 0;
+    transition: background var(--transition-smooth), backdrop-filter var(--transition-smooth);
+  }
+  nav.scrolled { background: rgba(10,10,11,0.85); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid var(--border-subtle); }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+  .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -0.02em; color: var(--text-primary); text-decoration: none; }
+  .nav-logo-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--gradient-hero); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
+  .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 450; transition: color var(--transition-fast); letter-spacing: -0.01em; }
+  .nav-links a:hover { color: var(--text-primary); }
+  .nav-cta {
+    padding: 8px 20px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.08);
+    color: var(--text-primary); text-decoration: none; font-size: 14px; font-weight: 550;
+    transition: background var(--transition-fast);
+  }
+  .nav-cta:hover { background: rgba(255,255,255,0.14); }
+
+  /* ---------- HERO ---------- */
+  .hero { text-align: center; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 16px; border-radius: 100px;
+    border: 1px solid var(--border-medium);
+    background: var(--bg-secondary);
+    font-size: 13px; color: var(--text-secondary); letter-spacing: -0.01em;
+    margin-bottom: 32px;
+  }
+  .hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-teal); animation: pulse-dot 2s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+  .hero h1 {
+    font-size: clamp(42px, 6vw, 72px); font-weight: 700; letter-spacing: -0.03em;
+    line-height: 1.08; margin-bottom: 24px;
+    background: linear-gradient(180deg, #FFFFFF 0%, #A1A1A6 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero h1 strong {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: clamp(17px, 2vw, 20px); color: var(--text-secondary);
+    max-width: 640px; margin: 0 auto 40px;
+    line-height: 1.55; letter-spacing: -0.01em;
+  }
+  .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: var(--radius-md); font-size: 15px; font-weight: 550; letter-spacing: -0.01em; cursor: pointer; text-decoration: none; transition: all var(--transition-fast); border: none; }
+  .btn-primary { background: var(--gradient-cta); color: #fff; box-shadow: 0 0 20px rgba(59,130,246,0.25); }
+  .btn-primary:hover { box-shadow: 0 0 32px rgba(59,130,246,0.4); transform: translateY(-1px); }
+  .btn-secondary { background: rgba(255,255,255,0.06); color: var(--text-primary); border: 1px solid var(--border-medium); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.10); border-color: var(--border-strong); }
+  .btn-ghost { background: transparent; color: var(--text-secondary); }
+  .btn-ghost:hover { color: var(--text-primary); }
+
+  /* ---------- LOGOS BAR ---------- */
+  .logos-bar { padding: 48px 0; border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); }
+  .logos-grid { display: flex; align-items: center; justify-content: center; gap: 56px; flex-wrap: wrap; }
+  .logos-grid span { color: var(--text-tertiary); font-size: 15px; font-weight: 500; letter-spacing: 0.02em; opacity: 0.6; }
+
+  /* ---------- SECTION HEADERS ---------- */
+  .section-label { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-blue); margin-bottom: 16px; }
+  .section-title { font-size: clamp(28px, 4vw, 44px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 20px; }
+  .section-desc { font-size: 17px; color: var(--text-secondary); max-width: 560px; line-height: 1.6; }
+
+  /* ---------- PAIN GRID ---------- */
+  .pain-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 56px; }
+  .pain-card {
+    background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+    padding: 28px; transition: all var(--transition-smooth); position: relative; overflow: hidden;
+  }
+  .pain-card::before { content: ''; position: absolute; inset: 0; background: var(--gradient-card); opacity: 0; transition: opacity var(--transition-smooth); }
+  .pain-card:hover { border-color: var(--border-medium); transform: translateY(-2px); box-shadow: var(--shadow-card); }
+  .pain-card:hover::before { opacity: 1; }
+  .pain-card-icon { font-size: 28px; margin-bottom: 16px; position: relative; }
+  .pain-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.01em; position: relative; }
+  .pain-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; position: relative; }
+
+  /* ---------- FEATURES ---------- */
+  .features-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-top: 56px; }
+  .feature-card {
+    background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+    padding: 32px; transition: all var(--transition-smooth); display: flex; gap: 20px; align-items: flex-start;
+  }
+  .feature-card:hover { border-color: var(--border-medium); background: var(--bg-card-hover); }
+  .feature-icon {
+    width: 44px; height: 44px; min-width: 44px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .feature-icon.blue { background: rgba(59,130,246,0.12); color: var(--accent-blue); }
+  .feature-icon.purple { background: rgba(139,92,246,0.12); color: var(--accent-purple); }
+  .feature-icon.teal { background: rgba(20,184,166,0.12); color: var(--accent-teal); }
+  .feature-icon.amber { background: rgba(245,158,11,0.12); color: var(--accent-amber); }
+  .feature-icon.rose { background: rgba(244,63,94,0.12); color: var(--accent-rose); }
+  .feature-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.01em; }
+  .feature-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.55; }
+
+  /* ---------- HOW IT WORKS ---------- */
+  .steps { display: flex; gap: 24px; margin-top: 56px; counter-reset: step; }
+  .step {
+    flex: 1; position: relative; counter-increment: step;
+    background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+    padding: 32px; transition: all var(--transition-smooth);
+  }
+  .step:hover { border-color: var(--border-medium); }
+  .step-num {
+    font-size: 13px; font-weight: 700; color: var(--accent-blue); margin-bottom: 12px;
+    letter-spacing: 0.04em;
+  }
+  .step-num::before { content: '0' counter(step); }
+  .step h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .step p { font-size: 14px; color: var(--text-secondary); line-height: 1.55; }
+
+  /* ---------- PRICING ---------- */
+  .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 56px; }
+  .pricing-card {
+    background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl);
+    padding: 40px 32px; transition: all var(--transition-smooth); display: flex; flex-direction: column; position: relative;
+  }
+  .pricing-card.featured { border-color: rgba(59,130,246,0.3); background: linear-gradient(180deg, rgba(59,130,246,0.04) 0%, var(--bg-card) 40%); box-shadow: var(--shadow-glow); }
+  .pricing-card:hover { border-color: var(--border-medium); }
+  .pricing-badge {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    padding: 4px 14px; border-radius: 100px; background: var(--gradient-cta);
+    font-size: 12px; font-weight: 600; color: #fff; letter-spacing: 0.02em;
+  }
+  .pricing-name { font-size: 15px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.02em; margin-bottom: 8px; }
+  .pricing-price { font-size: 48px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
+  .pricing-period { font-size: 14px; color: var(--text-tertiary); margin-bottom: 24px; }
+  .pricing-features { list-style: none; margin-bottom: 32px; flex: 1; }
+  .pricing-features li { padding: 8px 0; font-size: 14px; color: var(--text-secondary); display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); }
+  .pricing-features li:last-child { border-bottom: none; }
+  .pricing-features li::before { content: '✓'; color: var(--accent-teal); font-weight: 700; font-size: 13px; }
+  .pricing-cta { width: 100%; text-align: center; padding: 14px; border-radius: var(--radius-md); font-size: 15px; font-weight: 550; cursor: pointer; text-decoration: none; transition: all var(--transition-fast); display: block; letter-spacing: -0.01em; }
+  .pricing-cta-primary { background: var(--gradient-cta); color: #fff; box-shadow: 0 0 20px rgba(59,130,246,0.2); }
+  .pricing-cta-primary:hover { box-shadow: 0 0 32px rgba(59,130,246,0.35); transform: translateY(-1px); }
+  .pricing-cta-secondary { background: rgba(255,255,255,0.06); color: var(--text-primary); border: 1px solid var(--border-medium); }
+  .pricing-cta-secondary:hover { background: rgba(255,255,255,0.10); }
+
+  /* ---------- COMPARISON ---------- */
+  .comparison-table { width: 100%; margin-top: 48px; border-collapse: separate; border-spacing: 0; }
+  .comparison-table th { text-align: left; padding: 16px 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle); }
+  .comparison-table th:not(:first-child) { text-align: center; }
+  .comparison-table td { padding: 14px 20px; font-size: 14px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); }
+  .comparison-table td:not(:first-child) { text-align: center; }
+  .comparison-table tr:hover td { background: rgba(255,255,255,0.015); }
+  .check { color: var(--accent-teal); font-weight: 700; }
+  .dash { color: var(--text-tertiary); }
+
+  /* ---------- FAQ ---------- */
+  .faq-list { margin-top: 48px; display: flex; flex-direction: column; gap: 4px; }
+  .faq-item { border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; transition: border-color var(--transition-fast); }
+  .faq-item:hover { border-color: var(--border-medium); }
+  .faq-q {
+    width: 100%; background: var(--bg-card); border: none; padding: 22px 28px;
+    font-size: 15px; font-weight: 550; color: var(--text-primary); text-align: left;
+    cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    font-family: inherit; letter-spacing: -0.01em; transition: background var(--transition-fast);
+  }
+  .faq-q:hover { background: var(--bg-card-hover); }
+  .faq-q::after { content: '+'; font-size: 20px; font-weight: 400; color: var(--text-tertiary); transition: transform var(--transition-smooth); }
+  .faq-item.open .faq-q::after { transform: rotate(45deg); }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height var(--transition-smooth), padding var(--transition-smooth); }
+  .faq-item.open .faq-a { max-height: 300px; padding: 0 28px 22px; }
+  .faq-a p { font-size: 14px; color: var(--text-secondary); line-height: 1.65; }
+
+  /* ---------- CTA BANNER ---------- */
+  .cta-banner {
+    text-align: center; padding: 100px 32px; border-radius: var(--radius-xl);
+    background: linear-gradient(180deg, rgba(59,130,246,0.06) 0%, rgba(139,92,246,0.04) 50%, transparent 100%);
+    border: 1px solid var(--border-subtle);
+  }
+  .cta-banner h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 700; letter-spacing: -0.03em; margin-bottom: 16px; }
+  .cta-banner p { font-size: 17px; color: var(--text-secondary); max-width: 520px; margin: 0 auto 32px; line-height: 1.55; }
+
+  /* ---------- FOOTER ---------- */
+  footer { border-top: 1px solid var(--border-subtle); padding: 64px 0 40px; position: relative; z-index: 1; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; }
+  .footer-brand p { font-size: 14px; color: var(--text-tertiary); margin-top: 12px; line-height: 1.6; }
+  .footer-col h4 { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 16px; }
+  .footer-col ul { list-style: none; }
+  .footer-col li { margin-bottom: 10px; }
+  .footer-col a { font-size: 14px; color: var(--text-tertiary); text-decoration: none; transition: color var(--transition-fast); }
+  .footer-col a:hover { color: var(--text-primary); }
+  .footer-bottom { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .footer-bottom span { font-size: 13px; color: var(--text-tertiary); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 768px) {
+    section { padding: 80px 0; }
+    section:first-of-type { padding-top: 120px; }
+    .nav-links { display: none; }
+    .container, .container-narrow { padding: 0 20px; }
+    .logos-grid { gap: 32px; }
+    .steps { flex-direction: column; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .comparison-table { font-size: 12px; }
+    .comparison-table th, .comparison-table td { padding: 10px 12px; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .features-layout { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- ANIMATIONS ---------- */
+  .fade-in { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease-out, transform 0.7s ease-out; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon">🧬</div>
+      LabOps OS
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a href="#pricing" class="nav-cta">Start free</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container-narrow">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Now in public beta
+    </div>
+    <h1>The <strong>operating system</strong> your lab has been missing</h1>
+    <p class="hero-sub">
+      Stop stitching together spreadsheets, ELNs, instrument exports, Slack threads, and vendor emails.
+      LabOps OS connects experiments, samples, instruments, inventory, and analysis handoffs in one place.
+    </p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn btn-primary">Start free →</a>
+      <a href="#how-it-works" class="btn btn-secondary">See how it works</a>
+    </div>
+  </div>
+</section>
+
+<!-- LOGOS -->
+<div class="logos-bar">
+  <div class="container">
+    <div class="logos-grid">
+      <span>Trusted by biotech labs</span>
+      <span>R&amp;D operations teams</span>
+      <span>Platform biology groups</span>
+      <span>Core facilities</span>
+      <span>CROs</span>
+    </div>
+  </div>
+</div>
+
+<!-- PAIN POINTS -->
+<section id="pain">
+  <div class="container-narrow" style="text-align: center;">
+    <div class="section-label">The problem</div>
+    <h2 class="section-title">Your lab runs on chaos</h2>
+    <p class="section-desc" style="margin: 0 auto;">
+      Critical research flows through disconnected systems. Nobody can answer &ldquo;where is that sample?&rdquo; without checking four places.
+    </p>
+  </div>
+  <div class="container">
+    <div class="pain-grid">
+      <div class="pain-card fade-in">
+        <div class="pain-card-icon">📋</div>
+        <h3>Spreadsheet sprawl</h3>
+        <p>Inventory in Excel. Protocols in another sheet. Sample tracking in a third. Version control is &ldquo;FINAL_v3_actual.&rdquo;</p>
+      </div>
+      <div class="pain-card fade-in">
+        <div class="pain-card-icon">🔬</div>
+        <h3>Disconnected instruments</h3>
+        <p>Each instrument exports its own format. Data lands on USB sticks, network shares, or someone&rsquo;s desktop. No single source of truth.</p>
+      </div>
+      <div class="pain-card fade-in">
+        <div class="pain-card-icon">💬</div>
+        <h3>Slack &amp; email chaos</h3>
+        <p>Handoff requests, status updates, and &ldquo;is the plate ready?&rdquo; scattered across channels. Institutional knowledge evaporates when people leave.</p>
+      </div>
+      <div class="pain-card fade-in">
+        <div class="pain-card-icon">📦</div>
+        <h3>Vendor blind spots</h3>
+        <p>Orders, quotes, and lead times live in email threads. Reordering triggers are manual. Stockouts delay experiments by days.</p>
+      </div>
+      <div class="pain-card fade-in">
+        <div class="pain-card-icon">📊</div>
+        <h3>Analysis handoff gaps</h3>
+        <p>Raw data → analysis pipeline → report is a game of telephone. Metadata gets lost. Reproducibility suffers.</p>
+      </div>
+      <div class="pain-card fade-in">
+        <div class="pain-card-icon">🧪</div>
+        <h3>Protocol drift</h3>
+        <p>Two scientists run the &ldquo;same&rdquo; protocol differently. Deviations aren&rsquo;t captured. Troubleshooting means reconstructing from memory.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container-narrow" style="text-align: center;">
+    <div class="section-label">The solution</div>
+    <h2 class="section-title">One layer. Every connection.</h2>
+    <p class="section-desc" style="margin: 0 auto;">
+      LabOps OS is the operating layer that sits above your existing tools — not another system to migrate into.
+    </p>
+  </div>
+  <div class="container">
+    <div class="features-layout">
+      <div class="feature-card fade-in">
+        <div class="feature-icon blue">🧬</div>
+        <div>
+          <h3>Experiment orchestration</h3>
+          <p>Define experimental workflows with dependencies, assign steps, and track progress in real time. Know exactly what&rsquo;s running and what&rsquo;s next.</p>
+        </div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon purple">🧫</div>
+        <div>
+          <h3>Sample lifecycle tracking</h3>
+          <p>Every sample gets a digital passport. Track location, aliquot chain, freeze-thaw cycles, and lineage from collection to archive.</p>
+        </div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon teal">⚙️</div>
+        <div>
+          <h3>Instrument data ingestion</h3>
+          <p>Auto-ingest output files from sequencers, plate readers, LC-MS, and more. Structured data lands in the right experiment context automatically.</p>
+        </div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon amber">📦</div>
+        <div>
+          <h3>Inventory &amp; procurement</h3>
+          <p>Real-time inventory with reorder triggers. Vendor integration for quotes and order tracking. No more last-minute stockout emergencies.</p>
+        </div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon rose">📖</div>
+        <div>
+          <h3>Protocol versioning</h3>
+          <p>Version-controlled protocols with deviation capture. Run history shows exactly what happened — not what was supposed to happen.</p>
+        </div>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon blue">📊</div>
+        <div>
+          <h3>Analysis handoff pipeline</h3>
+          <p>Pass structured data and metadata directly to your analysis tools. No more &ldquo;which column is the treatment group?&rdquo; emails.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="container-narrow" style="text-align: center;">
+    <div class="section-label">Get started</div>
+    <h2 class="section-title">From chaos to clarity in days</h2>
+    <p class="section-desc" style="margin: 0 auto;">
+      No migration project. No consultants. Connect your existing tools and start seeing the full picture.
+    </p>
+  </div>
+  <div class="container">
+    <div class="steps">
+      <div class="step fade-in">
+        <div class="step-num"></div>
+        <h3>Connect your stack</h3>
+        <p>Link your existing ELN, LIMS, cloud storage, Slack, and instrument directories. LabOps OS reads what&rsquo;s already there.</p>
+      </div>
+      <div class="step fade-in">
+        <div class="step-num"></div>
+        <h3>Define your workflows</h3>
+        <p>Map your lab&rsquo;s real processes — sample prep → assay → analysis → report. Add checkpoints, dependencies, and owners.</p>
+      </div>
+      <div class="step fade-in">
+        <div class="step-num"></div>
+        <h3>Run with visibility</h3>
+        <p>Everyone sees the same status. Instruments feed data into the right context. Handoffs happen automatically.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="container-narrow" style="text-align: center;">
+    <div class="section-label">Pricing</div>
+    <h2 class="section-title">Start free. Scale when ready.</h2>
+    <p class="section-desc" style="margin: 0 auto;">
+      No hidden fees. No annual lock-in. Self-serve onboarding.
+    </p>
+  </div>
+  <div class="container">
+    <div class="pricing-grid">
+      <div class="pricing-card fade-in">
+        <div class="pricing-name">Starter</div>
+        <div class="pricing-price">Free</div>
+        <div class="pricing-period">Up to 5 users</div>
+        <ul class="pricing-features">
+          <li>5 team members</li>
+          <li>3 active experiments</li>
+          <li>Basic workflow builder</li>
+          <li>Manual data entry</li>
+          <li>Sample tracking (100 samples)</li>
+          <li>Community support</li>
+        </ul>
+        <a href="#" class="pricing-cta pricing-cta-secondary">Start free →</a>
+      </div>
+      <div class="pricing-card featured fade-in">
+        <div class="pricing-badge">Most popular</div>
+        <div class="pricing-name">Pro</div>
+        <div class="pricing-price">$399<span style="font-size: 18px; font-weight: 500; color: var(--text-tertiary);">/mo</span></div>
+        <div class="pricing-period">Up to 20 users</div>
+        <ul class="pricing-features">
+          <li>20 team members</li>
+          <li>Unlimited experiments</li>
+          <li>Advanced workflow builder</li>
+          <li>Instrument data auto-ingestion</li>
+          <li>Unlimited sample tracking</li>
+          <li>Protocol versioning</li>
+          <li>Inventory &amp; reorder triggers</li>
+          <li>Vendor integration</li>
+          <li>Analysis handoff pipeline</li>
+          <li>Slack &amp; email notifications</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="#" class="pricing-cta pricing-cta-primary">Start Pro trial →</a>
+      </div>
+      <div class="pricing-card fade-in">
+        <div class="pricing-name">Enterprise</div>
+        <div class="pricing-price">Custom</div>
+        <div class="pricing-period">Unlimited users</div>
+        <ul class="pricing-features">
+          <li>Everything in Pro</li>
+          <li>Unlimited users</li>
+          <li>SSO / SAML</li>
+          <li>Custom integrations</li>
+          <li>On-premise deployment option</li>
+          <li>Dedicated support engineer</li>
+          <li>SLA guarantee</li>
+          <li>Audit logs &amp; compliance</li>
+        </ul>
+        <a href="#" class="pricing-cta pricing-cta-secondary">Contact sales →</a>
+      </div>
+    </div>
+
+    <!-- Comparison table -->
+    <div style="overflow-x: auto;">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Starter</th>
+            <th>Pro</th>
+            <th>Enterprise</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Team members</td><td>5</td><td>20</td><td>Unlimited</td></tr>
+          <tr><td>Active experiments</td><td>3</td><td>Unlimited</td><td>Unlimited</td></tr>
+          <tr><td>Workflow builder</td><td>Basic</td><td>Advanced</td><td>Advanced</td></tr>
+          <tr><td>Sample tracking</td><td>100 samples</td><td>Unlimited</td><td>Unlimited</td></tr>
+          <tr><td>Instrument ingestion</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Protocol versioning</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Vendor integration</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Analysis handoff</td><td><span class="dash">—</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>SSO / SAML</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>On-premise option</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>SLA</td><td><span class="dash">—</span></td><td><span class="dash">—</span></td><td><span class="check">✓</span></td></tr>
+          <tr><td>Support</td><td>Community</td><td>Priority</td><td>Dedicated</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="container-narrow">
+    <div style="text-align: center;">
+      <div class="section-label">FAQ</div>
+      <h2 class="section-title">You probably have questions</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q">Do I need to replace my existing ELN or LIMS?</button>
+        <div class="faq-a"><p>No. LabOps OS sits on top of your existing tools as an orchestration layer. It reads data from your ELN, LIMS, cloud storage, and communication tools — you don&rsquo;t need to migrate anything.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">How long does setup take?</button>
+        <div class="faq-a"><p>Most labs are up and running within a week. Connecting existing data sources takes minutes. Defining workflows takes a few hours. No consultants or professional services required.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What instruments do you support?</button>
+        <div class="faq-a"><p>We auto-ingest standard output formats from sequencers (Illumina, ONT, PacBio), plate readers (Tecan, BioTek, Molecular Devices), LC-MS (Thermo, Agilent, Waters), flow cytometers, and more. Custom parsers available for Enterprise.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Is my data secure?</button>
+        <div class="faq-a"><p>Yes. All data is encrypted in transit and at rest. We&rsquo;re SOC 2 Type II compliant. Enterprise customers can opt for on-premise deployment with no data leaving your network. We never use your data to train models.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Can I export my data?</button>
+        <div class="faq-a"><p>Absolutely. Export everything to CSV, JSON, or Parquet at any time. No lock-in. Enterprise plans include automated backups to your own S3 bucket or on-premise storage.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Do you offer academic pricing?</button>
+        <div class="faq-a"><p>Yes. Academic labs and non-profit research institutions qualify for a 30% discount on Pro plans. Contact us with your institutional email for details.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<section>
+  <div class="container-narrow">
+    <div class="cta-banner fade-in">
+      <h2>Your lab deserves better than spreadsheets</h2>
+      <p>Start free. No credit card. Set up in minutes. See what you&rsquo;ve been missing.</p>
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary">Start free →</a>
+        <a href="#" class="btn btn-ghost">Talk to sales →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo" style="margin-bottom: 8px;">
+          <div class="nav-logo-icon">🧬</div>
+          LabOps OS
+        </a>
+        <p>The operating layer for biotech and R&amp;D labs. Connect experiments, samples, instruments, inventory, and analysis in one place.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#">Integrations</a></li>
+          <li><a href="#">Changelog</a></li>
+          <li><a href="#">Status</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">GDPR</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 LabOps OS. All rights reserved.</span>
+      <span>Built for scientists, not for spreadsheets.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // NAV SCROLL EFFECT
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 20);
+  });
+
+  // FADE-IN ON SCROLL
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  // FAQ ACCORDION
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.parentElement;
+      const isOpen = item.classList.contains('open');
+
+      // Close all
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+
+      // Open clicked (unless it was already open)
+      if (!isOpen) item.classList.add('open');
+    });
+  });
+
+  // SMOOTH SCROLL FOR ALL ANCHOR LINKS
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+</script>
+</body>
+</html>
