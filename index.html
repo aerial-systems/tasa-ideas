@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tasa Ideas — 10 SaaS Startups Worth Building in 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root { --navy: #061b31; --purple: #533afd; --slate: #64748d; --border: #e5edf5; --white: #fff; --bg: #f8fafc; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Source Sans 3', system-ui, sans-serif; font-weight: 300; color: var(--navy); background: var(--white); line-height: 1.4; }
+.container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+.hero { padding: 80px 0 48px; text-align: center; }
+.hero h1 { font-size: clamp(28px,5vw,44px); font-weight: 300; letter-spacing: -0.8px; margin-bottom: 12px; }
+.hero h1 em { font-style: normal; color: var(--purple); }
+.hero p { font-size: 18px; color: var(--slate); max-width: 640px; margin: 0 auto; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; padding: 0 0 80px; }
+.card { border: 1px solid var(--border); border-radius: 6px; padding: 28px; transition: box-shadow 0.2s, border-color 0.2s; background: var(--white); text-decoration: none; color: inherit; display: block; }
+.card:hover { border-color: #b9b9f9; box-shadow: rgba(50,50,93,0.25) 0px 30px 45px -30px, rgba(0,0,0,0.1) 0px 18px 36px -18px; }
+.card .num { font-size: 12px; font-weight: 600; color: var(--purple); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.card h2 { font-size: 20px; font-weight: 300; letter-spacing: -0.2px; margin-bottom: 6px; }
+.card .score { font-size: 13px; color: var(--slate); margin-bottom: 8px; }
+.card .score span { color: var(--navy); font-weight: 400; }
+.card .desc { font-size: 14px; color: var(--slate); line-height: 1.5; }
+footer { border-top: 1px solid var(--border); padding: 32px 0; text-align: center; font-size: 13px; color: var(--slate); }
+footer a { color: var(--purple); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="hero container">
+  <h1>10 SaaS ideas <em>worth building</em> in 2026</h1>
+  <p>Researched and scored by Tasa. Landing pages built by Konstantin via DeepSeek V4 Pro. All Stripe-design, all self-serve, all ready to validate.</p>
+</div>
+
+<div class="grid container">
+  <a href="flight-recorder/" class="card">
+    <div class="num">#1 · Score 96</div>
+    <h2>Agentic Workflow Flight Recorder</h2>
+    <div class="score">Agent infrastructure · <span>Free → $799/mo</span></div>
+    <div class="desc">Black box for production AI agents. Captures tool calls, prompts, context, UI state, costs, and failure replay in one timeline.</div>
+  </a>
+  <a href="mcp-gateway/" class="card">
+    <div class="num">#2 · Score 95</div>
+    <h2>MCP Tool Identity Gateway</h2>
+    <div class="score">Agent infrastructure · <span>Free → $199/mo</span></div>
+    <div class="desc">Control plane for agent IAM: scoped identity, short-lived credentials, per-call policy, tamper-evident audit logs.</div>
+  </a>
+  <a href="api-connector/" class="card">
+    <div class="num">#3 · Score 94</div>
+    <h2>Self-Healing API Connector Runtime</h2>
+    <div class="score">Data infrastructure · <span>Free → $149/mo</span></div>
+    <div class="desc">Watches SaaS APIs for schema drift, auto-remaps fields, ships connector fixes before dashboards go stale.</div>
+  </a>
+  <a href="ci-control/" class="card">
+    <div class="num">#4 · Score 92</div>
+    <h2>Agent-Era CI Control Plane</h2>
+    <div class="score">Developer infra · <span>Free → $249/mo</span></div>
+    <div class="desc">Classifies CI failures, detects flakes, routes AI-generated PRs. Stops humans wasting time on noise.</div>
+  </a>
+  <a href="workflow-runtime/" class="card">
+    <div class="num">#5 · Score 90</div>
+    <h2>Multi-Tenant Workflow Runtime</h2>
+    <div class="score">SaaS architecture · <span>Free → $199/mo</span></div>
+    <div class="desc">Temporal-class durable execution as SaaS. Stop rebuilding async jobs, state machines, and retry logic.</div>
+  </a>
+  <a href="impl-debugger/" class="card">
+    <div class="num">#6 · Score 88</div>
+    <h2>SaaS Implementation Debugger</h2>
+    <div class="score">SaaS operations · <span>Free → $299/mo</span></div>
+    <div class="desc">Onboarding state machine: config diffing, integration health, guided setup. Cut 11-week onboardings in half.</div>
+  </a>
+  <a href="memory-store/" class="card">
+    <div class="num">#7 · Score 87</div>
+    <h2>Agent Memory Lifecycle Store</h2>
+    <div class="score">Agent infrastructure · <span>Free → $149/mo</span></div>
+    <div class="desc">Scoped agent memory: namespaces, retention, retrieval eval, redaction, replayable diffs. No more black-box memory.</div>
+  </a>
+  <a href="env-reproducer/" class="card">
+    <div class="num">#8 · Score 85</div>
+    <h2>Repo-to-Running Env Reproducer</h2>
+    <div class="score">Developer infra · <span>Free → $99/mo</span></div>
+    <div class="desc">Turns a README, repo, or CI failure into a runnable cloud environment. One click, not 45 minutes.</div>
+  </a>
+  <a href="lab-ops/" class="card">
+    <div class="num">#9 · Score 84</div>
+    <h2>Lab Operations Orchestration OS</h2>
+    <div class="score">Vertical SaaS · <span>Free → $399/mo</span></div>
+    <div class="desc">Operating layer for biotech/R&D: connects experiments, samples, instruments, inventory, and analysis handoffs.</div>
+  </a>
+  <a href="healthcare-ops/" class="card">
+    <div class="num">#10 · Score 83</div>
+    <h2>Healthcare Patient Access OS</h2>
+    <div class="score">Vertical SaaS · <span>Free → $299/mo</span></div>
+    <div class="desc">Non-billing ops layer for clinics: scheduling, intake, referrals, staffing, follow-ups. Capacity that isn't leaking.</div>
+  </a>
+</div>
+
+<footer class="container">
+  <p>Built by <a href="https://github.com/aerial-systems">aerial-systems</a> &middot; Research by Tasa &middot; Pages by Konstantin &middot; Powered by DeepSeek V4 Pro</p>
+</footer>
+</body>
+</html>
